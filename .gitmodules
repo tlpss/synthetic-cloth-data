@@ -1,0 +1,3 @@
+[submodule "airo-mono"]
+	path = airo-mono
+	url = https://github.com/airo-ugent/airo-mono.git
