@@ -9,6 +9,7 @@ setuptools.setup(
     description="TODO",
     install_requires=[
         "numpy",
+        "airo-blender"
     ],
     packages=find_packages(),
 )
