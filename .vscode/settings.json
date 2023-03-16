@@ -1,7 +1,11 @@
 {
     "python.testing.pytestArgs": [
-        "test"
+        "**/test/*.py",
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+
+    
+    "autoDocstring.docstringFormat": "google-notypes",
+    
 }

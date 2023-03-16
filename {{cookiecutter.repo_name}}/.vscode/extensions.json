@@ -1,8 +1,0 @@
-{
-    "recommendations": [
-        "ms-python.python",
-        "njpwerner.autodocstring",
-        "eamodio.gitlens",
-        "ms-vscode-remote.vscode-remote-extensionpack"
-    ]
-}

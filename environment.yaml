@@ -3,27 +3,17 @@
 # also make sure to install the local packages with the "-e" prefix
 # to create an environment: conda create env -f environment.yaml
 # to update: conda env update -f environment.yaml
-name: {{cookiecutter.repo_name}}
+name: synthetic-cloth-data
 channels:
   - pytorch
   - conda-forge
 dependencies:
-  - python={{cookiecutter.python_version}}
-  - pytorch
-  - cudatoolkit=11.3
-  - torchvision
+  - python=3.10
   - pip
   - pip:
     - numpy
     - matplotlib
-    - scipy
-    - wandb
-    - pytorch-lightning
-    - imageio
-    - albumentations
-    - timm
     - pytest
     - pre-commit
     - mypy
-    - darglint
-    - -e {{cookiecutter.package_name}}/
+    - -e synthetic_cloth_data/
