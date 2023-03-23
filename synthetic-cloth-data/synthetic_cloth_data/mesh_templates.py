@@ -2,8 +2,6 @@ import dataclasses
 from typing import List
 import numpy as np 
 import bpy, bmesh
-
-
 @dataclasses.dataclass
 class TowelMeshConfig:
     width: float = 0.2
