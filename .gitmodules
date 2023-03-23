@@ -1,3 +1,4 @@
-[submodule "airo-mono"]
-	path = airo-mono
-	url = https://github.com/airo-ugent/airo-mono.git
+[submodule "airo-blender"]
+	path = airo-blender
+	url = https://github.com/airo-ugent/airo-blender.git
+

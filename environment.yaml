@@ -1,0 +1,10 @@
+name: synthetic-cloth
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    - -e airo-blender/airo-mono/airo-dataset-tools/
+    - -e airo-blender/
+    - -e synthetic-cloth-data/

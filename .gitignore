@@ -6,3 +6,5 @@
 **.gif
 **.ckpt
 **.pyc
+***__pycache__/
+**.pytest_cache/

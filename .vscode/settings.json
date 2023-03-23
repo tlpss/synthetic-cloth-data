@@ -5,7 +5,7 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
 
-    
+
     "autoDocstring.docstringFormat": "google-notypes",
-    
+
 }
