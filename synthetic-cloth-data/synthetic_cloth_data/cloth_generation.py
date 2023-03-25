@@ -1,12 +1,16 @@
 import enum
+import sys
 from typing import List
 
+print(sys.version)
 import numpy as np
 from synthetic_cloth_data.geometric_templates import (
     ShortsMeshConfig,
     TowelTemplateConfig,
+    TshirtMeshConfig,
     create_short_vertices,
     create_towel_vertices,
+    create_tshirt_vertices,
 )
 from synthetic_cloth_data.mesh_operations import (
     BevelConfig,
@@ -41,6 +45,38 @@ def sample_shorts_config() -> ShortsMeshConfig:
     return ShortsMeshConfig(waist, scrotch_height, pipe_width, length, waist_pipe_angle, pipe_outer_angle)
 
 
+def sample_tshirt_config() -> TshirtMeshConfig:
+    # based on https://fashion2apparel.com/t-shirt-measurement-guide-with-size-chart/
+    chest_width = np.random.uniform(0.38, 0.65)
+    shoulder_width = np.random.uniform(0.8, 0.95) * chest_width
+    neck_width = np.random.uniform(0.45, 0.55) * chest_width
+    sleeve_width = np.random.uniform(0.25, 0.3) * chest_width
+    sleeve_length = np.random.uniform(0.19, 0.2)
+    total_length = np.random.uniform(0.62, 0.75)
+    shoulder_length = total_length - 0.02  # small compensation for shoulder angle, should be based on shoulder angle
+    chest_length = shoulder_length * np.random.uniform(
+        0.65, 0.7
+    )  # small compensation for shoulder angle, should be based on shoulder angle
+    waist_width = np.random.uniform(0.95, 1.1) * chest_width
+    sleeve_angle = np.random.uniform(0.2, 0.5)
+    sleeve_inner_angle = np.random.uniform(-0.1, 0.1)
+    shoulder_angle = np.random.uniform(0.3, 0.5)
+
+    return TshirtMeshConfig(
+        waist_width,
+        chest_width,
+        shoulder_width,
+        neck_width,
+        shoulder_length,
+        chest_length,
+        sleeve_width,
+        sleeve_length,
+        sleeve_angle,
+        sleeve_inner_angle,
+        shoulder_angle,
+    )
+
+
 def sample_towel_bezier_config() -> BezierConfig:
     bezier_configs = []
     for i in range(4):  # 4 edges for towels
@@ -63,6 +99,29 @@ def sample_shorts_bezier_config() -> BezierConfig:
     return bezier_configs
 
 
+def sample_tshirt_bezier_config() -> BezierConfig:
+    x_range = 0.01
+    bezier_configs = [
+        BezierConfig(0, 1, np.random.uniform(-x_range, x_range), np.random.uniform(-0.01, 0.01)),  # left shoulder
+        BezierConfig(1, 2, np.random.uniform(-x_range, x_range), np.random.uniform(-0.15, -0.05)),  # neck
+        BezierConfig(2, 3, np.random.uniform(-x_range, x_range), np.random.uniform(-0.01, 0.01)),  # right shoulder
+        BezierConfig(3, 4, np.random.uniform(-x_range, x_range), np.random.uniform(-0.01, 0.01)),  # right sleeve
+        BezierConfig(4, 5, np.random.uniform(-x_range, x_range), np.random.uniform(-0.01, 0.01)),  # right sleeve side
+        BezierConfig(
+            5, 6, np.random.uniform(-x_range, x_range), np.random.uniform(-0.01, 0.01)
+        ),  # right sleeve bottom
+        BezierConfig(6, 7, np.random.uniform(-x_range, x_range), np.random.uniform(-0.03, 0.03)),  # right side
+        BezierConfig(7, 8, np.random.uniform(-x_range, x_range), np.random.uniform(-0.03, 0.03)),  # bottom
+        BezierConfig(8, 9, np.random.uniform(-x_range, x_range), np.random.uniform(-0.03, 0.03)),  # left side
+        BezierConfig(
+            9, 10, np.random.uniform(-x_range, x_range), np.random.uniform(-0.01, 0.01)
+        ),  # left sleeve bottom
+        BezierConfig(10, 11, np.random.uniform(-x_range, x_range), np.random.uniform(-0.01, 0.01)),  # left sleeve side
+        BezierConfig(11, 0, np.random.uniform(-x_range, x_range), np.random.uniform(-0.01, 0.01)),  # left sleeve
+    ]
+    return bezier_configs
+
+
 def sample_towel_bevel_configs(keypoint_ids: List[int]):
     bevel_configs = []
     for id in keypoint_ids:
@@ -71,6 +130,13 @@ def sample_towel_bevel_configs(keypoint_ids: List[int]):
 
 
 def sample_shorts_bevel_configs(keypoint_ids: List[int]):
+    bevel_configs = []
+    for id in keypoint_ids:
+        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.03)))
+    return bevel_configs
+
+
+def sample_tshirt_bevel_configs(keypoint_ids: List[int]):
     bevel_configs = []
     for id in keypoint_ids:
         bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.03)))
@@ -114,16 +180,24 @@ def generate_cloth_object(type: CLOTH_TYPES):
         geometric_vertices, keypoints = create_short_vertices(sample_shorts_config())
         bezier_configs = sample_shorts_bezier_config()
 
-    towel_vertices = apply_bezier_curves_to_mesh(geometric_vertices, bezier_configs)
-    new_keypoint_ids = find_nearest_vertex_ids(towel_vertices, list(keypoints.values()))
-    keypoints = {k: towel_vertices[v] for k, v in zip(keypoints.keys(), new_keypoint_ids)}
-    blender_object = create_blender_object_from_vertices("towel", towel_vertices)
+    elif type == CLOTH_TYPES.TSHIRT:
+        geometric_vertices, keypoints = create_tshirt_vertices(sample_tshirt_config())
+        bezier_configs = sample_tshirt_bezier_config()
+
+    cloth_vertices = apply_bezier_curves_to_mesh(geometric_vertices, bezier_configs)
+    new_keypoint_ids = find_nearest_vertex_ids(cloth_vertices, list(keypoints.values()))
+    keypoints = {k: cloth_vertices[v] for k, v in zip(keypoints.keys(), new_keypoint_ids)}
+    blender_object = create_blender_object_from_vertices("towel", cloth_vertices)
 
     if type == CLOTH_TYPES.TOWEL:
         bevel_configs = sample_towel_bevel_configs(new_keypoint_ids)
     elif type == CLOTH_TYPES.SHORTS:
         bevel_configs = sample_shorts_bevel_configs(new_keypoint_ids)
+    elif type == CLOTH_TYPES.TSHIRT:
+        bevel_configs = sample_tshirt_bevel_configs(new_keypoint_ids)
+
     blender_object = bevel_vertices(blender_object, bevel_configs)
+
     return blender_object
 
 
@@ -132,5 +206,5 @@ if __name__ == "__main__":
 
     bpy.ops.object.delete()  # Delete default cube
     for idx in range(100):
-        ob = generate_cloth_object(CLOTH_TYPES.SHORTS)
+        ob = generate_cloth_object(CLOTH_TYPES.TSHIRT)
         ob.location = np.array([idx % 10, idx // 10, 0])

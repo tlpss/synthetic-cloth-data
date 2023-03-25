@@ -3,6 +3,38 @@ from typing import List
 
 import numpy as np
 
+TOWEL_KEYPOINTS = [
+    "corner_0",
+    "corner_1",
+    "corner_2",
+    "corner_3",
+]
+
+SHORT_KEYPOINTS = [
+    "left_waist",
+    "right_waist",
+    "right_pipe_outer",
+    "right_pipe_inner",
+    "crotch",
+    "left_pipe_inner",
+    "left_pipe_outer",
+]
+
+TSHIRT_KEYPOINTS = [
+    "shoulder_left",
+    "neck_left",
+    "neck_right",
+    "shoulder_right",
+    "sleeve_right_top",
+    "sleeve_right_bottom",
+    "armpit_right",
+    "waist_right",
+    "waist_left",
+    "armpit_left",
+    "sleeve_left_bottom",
+    "sleeve_left_top",
+]
+
 
 @dataclasses.dataclass
 class TowelTemplateConfig:
@@ -24,14 +56,14 @@ class ShortsMeshConfig:
 class TshirtMeshConfig:
     waist_width: float = 0.65
     chest_width: float = 0.7
-    shoulder_width: float = 0.62
-    neck_width: float = 0.32
+    shoulder_width: float = 0.68
+    neck_width: float = 0.3
     shoulder_length: float = 0.9
-    chest_length: float = 0.6
+    chest_length: float = 0.65
     sleeve_width: float = 0.2
     sleeve_length: float = 0.3
-    sleeve_angle: float = 0.4
-    sleeve_inner_angle: float = 0.0
+    sleeve_angle: float = 0.5
+    sleeve_inner_angle: float = 0.1
     shoulder_angle: float = 0.3
 
 
@@ -45,12 +77,7 @@ def create_towel_vertices(config: TowelTemplateConfig) -> List[np.ndarray]:
         np.array([width / 2, length / 2, 0.0]),
         np.array([-width / 2, length / 2, 0.0]),
     ]
-    keypoints = {
-        "corner_0": vertices[0],
-        "corner_1": vertices[1],
-        "corner_2": vertices[2],
-        "corner_3": vertices[3],
-    }
+    keypoints = {name: vertex for name, vertex in zip(TOWEL_KEYPOINTS, vertices)}
     return vertices, keypoints
 
 
@@ -80,31 +107,58 @@ def create_short_vertices(config: ShortsMeshConfig) -> List[np.ndarray]:
     vertices[:, 1] += config.crotch_height
     vertices = list(vertices)
 
-    names = [
-        "left_waist",
-        "right_waist",
-        "right_pipe_outer",
-        "right_pipe_inner",
-        "crotch",
-        "left_pipe_inner",
-        "left_pipe_outer",
-    ]
-
-    keypoints = {name: vertex for name, vertex in zip(names, vertices)}
+    keypoints = {name: vertex for name, vertex in zip(SHORT_KEYPOINTS, vertices)}
     return vertices, keypoints
 
 
 def create_tshirt_vertices(config: TshirtMeshConfig) -> List[np.ndarray]:
-    np.array([-config.waist_width / 2, 0, 0])
-    np.array([config.waist_width / 2, 0, 0])
-    np.array([-config.chest_width / 2, config.chest_length, 0])
-    np.array([config.chest_width / 2, config.chest_length, 0])
-    np.array([-config.shoulder_width / 2, config.shoulder_length, 0])
-    np.array([config.shoulder_width / 2, config.shoulder_length, 0])
+    waist_left = np.array([-config.waist_width / 2, 0, 0])
+    waist_right = np.array([config.waist_width / 2, 0, 0])
+    armpit_left = np.array([-config.chest_width / 2, config.chest_length, 0])
+    armpit_righ = np.array([config.chest_width / 2, config.chest_length, 0])
+    shoulder_left = np.array([-config.shoulder_width / 2, config.shoulder_length, 0])
+    shoulder_right = np.array([config.shoulder_width / 2, config.shoulder_length, 0])
 
-    # TODO: add neck
-    # TODO: add sleeves
-    raise NotImplementedError
+    d = (config.shoulder_width - config.neck_width) / 2
+    neck_right = shoulder_right + np.array([-np.cos(config.shoulder_angle) * d, np.sin(config.shoulder_angle) * d, 0])
+    neck_left = shoulder_left + np.array([np.cos(config.shoulder_angle) * d, np.sin(config.shoulder_angle) * d, 0])
+
+    sleeve_right_top = shoulder_right + np.array(
+        [np.cos(config.sleeve_angle) * config.sleeve_length, -np.sin(config.sleeve_angle) * config.sleeve_length, 0]
+    )
+    absolute_inner_angle = -(config.sleeve_angle + np.pi / 2 + config.sleeve_inner_angle)
+    sleeve_right_bottom = sleeve_right_top + np.array(
+        [np.cos(absolute_inner_angle) * config.sleeve_width, np.sin(absolute_inner_angle) * config.sleeve_width, 0]
+    )
+
+    sleeve_left_top = shoulder_left + np.array(
+        [-np.cos(config.sleeve_angle) * config.sleeve_length, -np.sin(config.sleeve_angle) * config.sleeve_length, 0]
+    )
+    absolute_inner_angle = np.pi + config.sleeve_angle + np.pi / 2 + config.sleeve_inner_angle
+    sleeve_left_bottom = sleeve_left_top + np.array(
+        [np.cos(absolute_inner_angle) * config.sleeve_width, np.sin(absolute_inner_angle) * config.sleeve_width, 0]
+    )
+
+    vertices = [
+        shoulder_left,
+        neck_left,
+        neck_right,
+        shoulder_right,
+        sleeve_right_top,
+        sleeve_right_bottom,
+        armpit_righ,
+        waist_right,
+        waist_left,
+        armpit_left,
+        sleeve_left_bottom,
+        sleeve_left_top,
+    ]
+    vertices = np.array(vertices)
+    vertices[:, 1] -= config.chest_length
+    vertices = list(vertices)
+
+    keypoints = {name: vertex for name, vertex in zip(TSHIRT_KEYPOINTS, vertices)}
+    return vertices, keypoints
 
 
 if __name__ == "__main__":

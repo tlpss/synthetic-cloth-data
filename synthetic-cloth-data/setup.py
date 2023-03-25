@@ -1,5 +1,4 @@
 import setuptools
-from setuptools import find_packages
 
 setuptools.setup(
     name="synthetic_cloth_data",
@@ -8,5 +7,5 @@ setuptools.setup(
     author_email="thomas.lips@ugent.be",
     description="TODO",
     install_requires=["numpy", "airo-blender"],
-    packages=find_packages(),
+    packages=["synthetic_cloth_data"],
 )
