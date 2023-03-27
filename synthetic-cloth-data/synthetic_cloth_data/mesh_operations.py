@@ -3,6 +3,7 @@ from typing import List
 
 import bpy
 import numpy as np
+import triangle
 
 
 def quadratic_bezier(start: np.ndarray, control: np.ndarray, end: np.ndarray, steps: int) -> List[np.ndarray]:
@@ -97,7 +98,41 @@ def bevel_vertices(blender_object: bpy.types.Object, bevel_configs: List[BevelCo
     return blender_object
 
 
+def subdivide_mesh(blender_object, n_cuts=2):
+    ## subdivide mesh to increase resolution
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = blender_object
+    blender_object.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_mode(type="FACE")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.mesh.subdivide(number_cuts=n_cuts)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    bpy.ops.object.select_all(action="DESELECT")
+
+
 def find_nearest_vertex_ids(vertices: List[np.ndarray], points: List[np.ndarray]) -> List[int]:
     """find the nearest vertex for each point"""
     distances = np.linalg.norm(np.array(vertices)[:, np.newaxis, :] - np.array(points)[np.newaxis, :, :], axis=2)
     return np.argmin(distances, axis=0).tolist()
+
+
+def triangulate(blender_object: bpy.types.Object):
+    """triangulate the mesh"""
+    vertices, edges, faces = blender_object.data.vertices, blender_object.data.edges, blender_object.data.polygons
+    vertices = np.array([v.co for v in vertices])
+    vertices = vertices[:, :2]
+
+    triangle_input = {
+        "vertices": vertices,
+        "segments": np.array([[e.vertices[0], e.vertices[1]] for e in edges]),
+    }
+    area = 0.0001
+    triangle_output = triangle.triangulate(triangle_input, f"qpa{area:.32f}")
+    vertices = triangle_output["vertices"]
+    vertices = np.concatenate([vertices, np.zeros((len(vertices), 1))], axis=1)
+    faces = triangle_output["triangles"]
+    mesh = bpy.data.meshes.new("mesh")
+    mesh.from_pydata(vertices, [], faces)
+    blender_object.data = mesh
+    return blender_object

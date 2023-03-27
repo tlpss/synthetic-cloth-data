@@ -2,6 +2,8 @@ import enum
 import sys
 from typing import List
 
+import tqdm
+
 print(sys.version)
 import numpy as np
 from synthetic_cloth_data.geometric_templates import (
@@ -18,6 +20,8 @@ from synthetic_cloth_data.mesh_operations import (
     apply_bezier_curves_to_mesh,
     bevel_vertices,
     find_nearest_vertex_ids,
+    subdivide_mesh,
+    triangulate,
 )
 
 
@@ -48,7 +52,7 @@ def sample_shorts_config() -> ShortsMeshConfig:
 def sample_tshirt_config() -> TshirtMeshConfig:
     # based on https://fashion2apparel.com/t-shirt-measurement-guide-with-size-chart/
     chest_width = np.random.uniform(0.38, 0.65)
-    shoulder_width = np.random.uniform(0.8, 0.95) * chest_width
+    shoulder_width = np.random.uniform(0.9, 1.05) * chest_width
     neck_width = np.random.uniform(0.45, 0.55) * chest_width
     sleeve_width = np.random.uniform(0.25, 0.3) * chest_width
     sleeve_length = np.random.uniform(0.19, 0.2)
@@ -58,9 +62,9 @@ def sample_tshirt_config() -> TshirtMeshConfig:
         0.65, 0.7
     )  # small compensation for shoulder angle, should be based on shoulder angle
     waist_width = np.random.uniform(0.95, 1.1) * chest_width
-    sleeve_angle = np.random.uniform(0.2, 0.5)
+    sleeve_angle = np.random.uniform(0.3, 0.6)
     sleeve_inner_angle = np.random.uniform(-0.1, 0.1)
-    shoulder_angle = np.random.uniform(0.3, 0.5)
+    shoulder_angle = np.random.uniform(0.0, 0.2)
 
     return TshirtMeshConfig(
         waist_width,
@@ -145,7 +149,7 @@ def sample_tshirt_bevel_configs(keypoint_ids: List[int]):
 
 def create_blender_object_from_vertices(name: str, vertices: List[np.ndarray]):
     # apply bezier curves
-    edges = []
+    edges = [[i, (i + 1) % len(vertices)] for i in range(len(vertices))]
     faces = [[i for i in range(len(vertices))]]
 
     # create blender mesh
@@ -164,7 +168,7 @@ def visualize_keypoints(blender_object, vertex_ids):
     radius = 0.01
     for kid in vertex_ids:
         bpy.ops.mesh.primitive_ico_sphere_add(
-            location=blender_object.data.vertices[kid].co, scale=(radius, radius, radius)
+            location=blender_object.location + blender_object.data.vertices[kid].co, scale=(radius, radius, radius)
         )
 
 
@@ -173,7 +177,7 @@ CLOTH_TYPES = enum.Enum("CLOTH_TYPES", "TOWEL SHORTS TSHIRT")
 
 def generate_cloth_object(type: CLOTH_TYPES):
     if type == CLOTH_TYPES.TOWEL:
-        geometric_vertices, keypoints = create_towel_vertices(sample_towel_config())
+        geometric_vertices, keypoints = create_towel_vertices(TowelTemplateConfig())
         bezier_configs = sample_towel_bezier_config()
 
     elif type == CLOTH_TYPES.SHORTS:
@@ -187,6 +191,9 @@ def generate_cloth_object(type: CLOTH_TYPES):
     cloth_vertices = apply_bezier_curves_to_mesh(geometric_vertices, bezier_configs)
     new_keypoint_ids = find_nearest_vertex_ids(cloth_vertices, list(keypoints.values()))
     keypoints = {k: cloth_vertices[v] for k, v in zip(keypoints.keys(), new_keypoint_ids)}
+
+    # triangulate
+
     blender_object = create_blender_object_from_vertices("towel", cloth_vertices)
 
     if type == CLOTH_TYPES.TOWEL:
@@ -198,13 +205,70 @@ def generate_cloth_object(type: CLOTH_TYPES):
 
     blender_object = bevel_vertices(blender_object, bevel_configs)
 
-    return blender_object
+    blender_object = triangulate(blender_object)
+    cloth_vertices = [v.co for v in blender_object.data.vertices]
+    new_keypoint_ids = find_nearest_vertex_ids(cloth_vertices, list(keypoints.values()))
+    keypoint_ids = {k: v for k, v in zip(keypoints.keys(), new_keypoint_ids)}
+
+    return blender_object, keypoint_ids
+
+
+def set_shading_smooth(blender_object):
+    for poly in blender_object.data.polygons:
+        poly.use_smooth = True
+
+
+def attach_cloth_sim(blender_object):
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = blender_object
+    blender_object.select_set(True)
+    # add solidify modifier
+    bpy.ops.object.modifier_add(type="SOLIDIFY")
+    bpy.context.object.modifiers["Solidify"].thickness = np.random.uniform(0.001, 0.005)
+    bpy.ops.object.modifier_add(type="CLOTH")
+    # helps with smoothing of the mesh after deformation
+    bpy.ops.object.shade_smooth()
+
+    # physics
+    blender_object.modifiers["Cloth"].settings.quality = 5
+    blender_object.modifiers["Cloth"].settings.mass = np.random.uniform(0.1, 0.4)  # mass per vertex!
+    # air resistance - higher will result in more wrinkles during free fall. if zero, cloth falls 'rigidly'.
+    blender_object.modifiers["Cloth"].settings.air_damping = np.random.uniform(0.1, 3.0)
+    blender_object.modifiers["Cloth"].settings.tension_stiffness = np.random.uniform(2.0, 10.0)
+    blender_object.modifiers["Cloth"].settings.compression_stiffness = np.random.uniform(2.0, 10.0)
+    blender_object.modifiers["Cloth"].settings.shear_stiffness = np.random.uniform(2.0, 5.0)
+    blender_object.modifiers["Cloth"].settings.bending_stiffness = np.random.uniform(0.01, 1.0)
+    # collision
+    blender_object.modifiers["Cloth"].collision_settings.collision_quality = 2
+    blender_object.modifiers["Cloth"].collision_settings.use_self_collision = True
+    blender_object.modifiers["Cloth"].collision_settings.distance_min = 0.003
+    blender_object.modifiers["Cloth"].collision_settings.self_distance_min = 0.003
+    blender_object.modifiers["Cloth"].collision_settings.self_friction = np.random.uniform(0.1, 2.0)
 
 
 if __name__ == "__main__":
     import bpy
+    from airo_blender.materials import add_material
 
     bpy.ops.object.delete()  # Delete default cube
-    for idx in range(100):
-        ob = generate_cloth_object(CLOTH_TYPES.TSHIRT)
-        ob.location = np.array([idx % 10, idx // 10, 0])
+    bpy.ops.mesh.primitive_plane_add(size=12, location=(5, 5, 0))
+    bpy.ops.object.modifier_add(type="COLLISION")
+    bpy.context.object.collision.cloth_friction = 12.0
+    plane = bpy.context.object
+    subdivide_mesh(plane, 10)
+    add_material(plane, (1, 0.5, 0.5, 1.0))
+
+    for idx in tqdm.trange(100):
+        ob, kp = generate_cloth_object(CLOTH_TYPES.TSHIRT)
+        attach_cloth_sim(ob)
+        ob.location = np.array([idx % 10, idx // 10, 0.6])
+        x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.8, 2)
+        ob.rotation_euler = np.array([x_rot, y_rot, 0])
+        # visualize_keypoints(ob, list(kp.values()))
+        # ob.shade_smooth()
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.data.scenes["Scene"].frame_start = 0
+    for i in tqdm.trange(50):
+        bpy.context.scene.frame_set(i)
