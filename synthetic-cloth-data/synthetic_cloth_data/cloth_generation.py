@@ -231,13 +231,13 @@ def attach_cloth_sim(blender_object):
 
     # physics
     blender_object.modifiers["Cloth"].settings.quality = 5
-    blender_object.modifiers["Cloth"].settings.mass = np.random.uniform(0.1, 0.4)  # mass per vertex!
+    blender_object.modifiers["Cloth"].settings.mass = np.random.uniform(0.1, 2.0)  # mass per vertex!
     # air resistance - higher will result in more wrinkles during free fall. if zero, cloth falls 'rigidly'.
     blender_object.modifiers["Cloth"].settings.air_damping = np.random.uniform(0.1, 3.0)
-    blender_object.modifiers["Cloth"].settings.tension_stiffness = np.random.uniform(2.0, 10.0)
-    blender_object.modifiers["Cloth"].settings.compression_stiffness = np.random.uniform(2.0, 10.0)
-    blender_object.modifiers["Cloth"].settings.shear_stiffness = np.random.uniform(2.0, 5.0)
-    blender_object.modifiers["Cloth"].settings.bending_stiffness = np.random.uniform(0.01, 1.0)
+    blender_object.modifiers["Cloth"].settings.tension_stiffness = np.random.uniform(2.0, 50.0)
+    blender_object.modifiers["Cloth"].settings.compression_stiffness = np.random.uniform(2.0, 50.0)
+    blender_object.modifiers["Cloth"].settings.shear_stiffness = np.random.uniform(2.0, 20.0)
+    blender_object.modifiers["Cloth"].settings.bending_stiffness = np.random.uniform(0.01, 50.0)
     # collision
     blender_object.modifiers["Cloth"].collision_settings.collision_quality = 2
     blender_object.modifiers["Cloth"].collision_settings.use_self_collision = True
@@ -250,15 +250,16 @@ if __name__ == "__main__":
     import bpy
     from airo_blender.materials import add_material
 
+    np.random.seed(2023)
     bpy.ops.object.delete()  # Delete default cube
     bpy.ops.mesh.primitive_plane_add(size=12, location=(5, 5, 0))
     bpy.ops.object.modifier_add(type="COLLISION")
-    bpy.context.object.collision.cloth_friction = 12.0
+    bpy.context.object.collision.cloth_friction = np.random.uniform(5.0, 30.0)
     plane = bpy.context.object
     subdivide_mesh(plane, 10)
     add_material(plane, (1, 0.5, 0.5, 1.0))
 
-    for idx in tqdm.trange(100):
+    for idx in tqdm.trange(1):
         ob, kp = generate_cloth_object(CLOTH_TYPES.TSHIRT)
         attach_cloth_sim(ob)
         ob.location = np.array([idx % 10, idx // 10, 0.6])
@@ -267,8 +268,11 @@ if __name__ == "__main__":
         # visualize_keypoints(ob, list(kp.values()))
         # ob.shade_smooth()
 
-    bpy.ops.object.mode_set(mode="OBJECT")
-    bpy.ops.object.select_all(action="DESELECT")
+    # for now no very large crumplings such as folded in half
+    # these would probably require pinning some vertices and animating them.
+    # see https://docs.blender.org/manual/en/latest/modeling/modifiers/generate/subdivision_surface.html
+    # and https://www.youtube.com/watch?v=C8C4GntM60o for animation
+
     bpy.data.scenes["Scene"].frame_start = 0
     for i in tqdm.trange(50):
         bpy.context.scene.frame_set(i)
