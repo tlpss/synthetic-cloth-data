@@ -213,11 +213,6 @@ def generate_cloth_object(type: CLOTH_TYPES):
     return blender_object, keypoint_ids
 
 
-def set_shading_smooth(blender_object):
-    for poly in blender_object.data.polygons:
-        poly.use_smooth = True
-
-
 def attach_cloth_sim(blender_object):
     bpy.ops.object.select_all(action="DESELECT")
     bpy.context.view_layer.objects.active = blender_object

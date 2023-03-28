@@ -9,7 +9,6 @@ def create_evenly_colored_material(color: RGBAColor) -> bpy.types.Material:
     material.use_nodes = True
     # create color node
     color_node = material.node_tree.nodes.new(type="ShaderNodeRGB")
-    print(color[:3])
     color_node.outputs["Color"].default_value = color
     bsdf_node = material.node_tree.nodes["Principled BSDF"]
     material.node_tree.links.new(color_node.outputs[0], bsdf_node.inputs["Base Color"])
@@ -31,15 +30,16 @@ class ImageOnTextureConfig:
 def add_image_randomly_to_material(
     material: bpy.types.Material, image_path: str, config: ImageOnTextureConfig
 ) -> bpy.types.Material:
-    # find the RGB color node in the node_tree
-    color_node = None
-    material.node_tree.nodes["Principled BSDF"].inputs["Base Color"].links[0]
-    # get the output port of the node that is connected to the base color input
+    # find the node and socket that are connected to the base color input of the principled bsdf
 
-    if color_node is None:
-        # create a new RGB node and connect it to the principled BSDF node base color
-        color_node = material.node_tree.nodes.new("ShaderNodeRGB")
-        color_node.color = material.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value[:3]
+    color_input_node = material.node_tree.nodes["Principled BSDF"].inputs["Base Color"].links[0].from_node
+    # color_input_node_socket = (
+    #     material.node_tree.nodes["Principled BSDF"].inputs["Base Color"].links[0].from_socket.name
+    # )
+    # if color_input_node.name == "Mix Shader":
+    #     color_input_node_socket = 2  # has 3 outputs with similar name, but we need the one with index 2...
+    #     # TODO: can this be less hacky?
+    #     # can the sink id be queried?
 
     # create nodes
     image_node = material.node_tree.nodes.new("ShaderNodeTexImage")
@@ -84,8 +84,9 @@ def add_image_randomly_to_material(
     material.node_tree.links.new(compare_x_node.outputs["Value"], multiply_node.inputs[0])
     material.node_tree.links.new(compare_y_node.outputs["Value"], multiply_node.inputs[1])
     material.node_tree.links.new(multiply_node.outputs["Value"], mix_node.inputs["Fac"])
-    material.node_tree.links.new(color_node.outputs["Color"], mix_node.inputs["Color1"])
     material.node_tree.links.new(image_node.outputs["Color"], mix_node.inputs["Color2"])
+    material.node_tree.links.new(color_input_node.outputs[2], mix_node.inputs["Color1"])
+
     material.node_tree.links.new(
         mix_node.outputs["Color"], material.node_tree.nodes["Principled BSDF"].inputs["Base Color"]
     )

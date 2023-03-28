@@ -36,6 +36,12 @@ if __name__ == "__main__":
     material = add_image_randomly_to_material(material, path, ImageOnTextureConfig())
     obj.data.materials.append(material)
 
-    ## add plane
-    bpy.ops.mesh.primitive_plane_add()
-    bpy.context.object.data.materials.append(material)
+    # activate the object and enter edit mode
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode="EDIT")
+
+    # unwrap UV for rendering
+    bpy.ops.uv.unwrap(method="ANGLE_BASED", margin=0.001)
+
+    # exit edit mode
+    bpy.ops.object.mode_set(mode="OBJECT")
