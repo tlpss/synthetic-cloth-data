@@ -8,3 +8,4 @@ dependencies:
     - -e airo-blender/airo-mono/airo-dataset-tools/
     - -e airo-blender/
     - -e synthetic-cloth-data/
+    - triangle

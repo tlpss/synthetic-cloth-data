@@ -260,13 +260,11 @@ if __name__ == "__main__":
     add_material(plane, (1, 0.5, 0.5, 1.0))
 
     for idx in tqdm.trange(1):
-        ob, kp = generate_cloth_object(CLOTH_TYPES.TSHIRT)
+        ob, kp = generate_cloth_object(CLOTH_TYPES.SHORTS)
         attach_cloth_sim(ob)
         ob.location = np.array([idx % 10, idx // 10, 0.6])
         x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.8, 2)
         ob.rotation_euler = np.array([x_rot, y_rot, 0])
-        # visualize_keypoints(ob, list(kp.values()))
-        # ob.shade_smooth()
 
     # for now no very large crumplings such as folded in half
     # these would probably require pinning some vertices and animating them.
@@ -276,3 +274,5 @@ if __name__ == "__main__":
     bpy.data.scenes["Scene"].frame_start = 0
     for i in tqdm.trange(50):
         bpy.context.scene.frame_set(i)
+
+    visualize_keypoints(ob, list(kp.values()))

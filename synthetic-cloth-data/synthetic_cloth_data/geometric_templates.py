@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
     bpy.ops.object.delete()  # Delete default cube
 
-    vertices, keypoints = create_tshirt_vertices(TshirtMeshConfig())
+    vertices, keypoints = create_short_vertices(ShortsMeshConfig())
     print(vertices)
     edges = []
     faces = [[i for i in range(len(vertices))]]

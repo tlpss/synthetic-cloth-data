@@ -1,102 +1,10 @@
 import bpy
-
-
-def _add_white_stripes_on_black_nodes(
-    node_tree: bpy.types.ShaderNodeTree,
-    input_socket: bpy.types.NodeSocket,
-    amount_of_stripes: int,
-    stripe_width: float,
-) -> bpy.types.NodeSocket:
-    """
-    Add nodes to a node tree to create a pattern with white stripes on a black background.
-    Args:
-        node_tree: The matieral node tree to add the nodes to.
-        input_socket: This input should be a linear 0->1 range, e.g. the X component of a UV coordinate.
-        amount_of_stripes: The amount of white stripes on the black background.
-        stripe_width: The relative width of the white stripes, in range 0.0 to 1.0. 0.0 is solid black, 1.0 is solid white.
-    Returns:
-        The Color output socket that contains the striped pattern.
-    """
-    nodes = node_tree.nodes
-    links = node_tree.links
-
-    # Add nodes
-    # Math node set to multiply by 10
-    multiply = nodes.new(type="ShaderNodeMath")
-    multiply.operation = "MULTIPLY"
-    links.new(input_socket, multiply.inputs[0])
-    multiply.inputs[1].default_value = amount_of_stripes
-
-    # Math node set to fraction
-    fraction = nodes.new(type="ShaderNodeMath")
-    fraction.operation = "FRACT"
-    links.new(multiply.outputs["Value"], fraction.inputs[0])
-
-    # Math node set to compare to 0.5, with epsilon in range 0.0 to 0.5 to control the stripe width
-    compare = nodes.new(type="ShaderNodeMath")
-    compare.operation = "COMPARE"
-    links.new(fraction.outputs["Value"], compare.inputs[0])
-    compare.inputs[1].default_value = 0.5
-    compare.inputs[2].default_value = 0.5 * stripe_width
-    output_socket = compare.outputs["Value"]
-
-    return output_socket
-
-
-def create_striped_dish_towel_material(
-    amount_of_stripes: int,
-    stripe_width: float,
-    stripe_color: tuple[float, float, float, float],
-    background_color: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 1.0),
-    vertical: bool = True,
-) -> bpy.types.Material:
-    """
-    Create a striped dish towel material.
-    Args:
-        amount_of_stripes: The amount of stripes.
-        stripe_width: The relative width of the stripes, 0.0 means only background color, 1.0 means only stripe color.
-        stripe_color: The color of the stripes.
-        background_color: The color of the background. Defaults to white.
-        vertical: If True, the stripes run vertically, else horizontally.
-    Returns:
-        The created material.
-    """
-    material = bpy.data.materials.new(name="Striped Dish Towel")
-    material.use_nodes = True
-
-    node_tree = material.node_tree
-    nodes = node_tree.nodes
-    links = node_tree.links
-
-    # Sheen was made for a cloth looks, and dish towel fabric is generally not shiny at all.
-    nodes["Principled BSDF"].inputs["Sheen"].default_value = 1.0
-    nodes["Principled BSDF"].inputs["Roughness"].default_value = 1.0
-
-    # First set up the texture coordinate node for access to the UVs
-    texture_coordinates = nodes.new(type="ShaderNodeTexCoord")
-    separate_xyz = nodes.new(type="ShaderNodeSeparateXYZ")
-
-    # Connect the texture coordinate node to the separate XYZ node
-    links.new(texture_coordinates.outputs["UV"], separate_xyz.inputs["Vector"])
-
-    output_name = "X" if vertical else "Y"
-    stripes = _add_white_stripes_on_black_nodes(
-        node_tree, separate_xyz.outputs[output_name], amount_of_stripes, stripe_width
-    )
-
-    # There are several ways to turn a black and white pattern into a colored pattern.
-    # Here we use a Mix node to mix the stripe color with the background color.
-    # TODO: consider a better way of specifying inputs and outputs than using indices
-    # We can't use the string names because they are not unique.
-    mix = nodes.new(type="ShaderNodeMix")
-    mix.data_type = "RGBA"
-    links.new(stripes, mix.inputs[0])
-    mix.inputs[6].default_value = background_color
-    mix.inputs[7].default_value = stripe_color
-    colored_stripes = mix.outputs[2]
-
-    links.new(colored_stripes, nodes["Principled BSDF"].inputs["Base Color"])
-    return material
+from synthetic_cloth_data.materials.common import (
+    _add_white_stripes_on_black_nodes,
+    create_evenly_colored_material,
+    create_striped_dish_towel_material,
+    modify_bsdf_to_cloth,
+)
 
 
 def create_gridded_dish_towel_material(
@@ -181,6 +89,7 @@ if __name__ == "__main__":
     plane = bpy.context.object
     red = (1.0, 0.0, 0.0, 1.0)
     material = create_striped_dish_towel_material(3, 0.5, red)
+    material = modify_bsdf_to_cloth(material)
     plane.data.materials.append(material)
 
     # Add a second plane with the gridded dish towel material
@@ -191,4 +100,6 @@ if __name__ == "__main__":
     pale_yellow = (1.0, 1.0, 0.5, 1.0)
     green = (0.0, 1.0, 0.0, 1.0)
     material = create_gridded_dish_towel_material(5, 5, 0.2, 0.2, pale_blue, pale_yellow, green)
+    material = create_evenly_colored_material(green)
+    material = modify_bsdf_to_cloth(material)
     plane_gridded.data.materials.append(material)

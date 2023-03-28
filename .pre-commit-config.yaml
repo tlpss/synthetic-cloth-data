@@ -1,4 +1,7 @@
 # see https://pre-commit.com/hooks.html
+default_language_version:
+    python:
+        python3
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.2.0
