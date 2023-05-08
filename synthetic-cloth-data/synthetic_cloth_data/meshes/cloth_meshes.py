@@ -2,11 +2,12 @@ import enum
 import sys
 from typing import List
 
+import bpy
 import tqdm
 
 print(sys.version)
 import numpy as np
-from synthetic_cloth_data.geometric_templates import (
+from synthetic_cloth_data.meshes.geometric_templates import (
     ShortsMeshConfig,
     TowelTemplateConfig,
     TshirtMeshConfig,
@@ -14,7 +15,7 @@ from synthetic_cloth_data.geometric_templates import (
     create_towel_vertices,
     create_tshirt_vertices,
 )
-from synthetic_cloth_data.mesh_operations import (
+from synthetic_cloth_data.meshes.mesh_operations import (
     BevelConfig,
     BezierConfig,
     apply_bezier_curves_to_mesh,
@@ -168,7 +169,7 @@ def visualize_keypoints(blender_object, vertex_ids):
     radius = 0.01
     for kid in vertex_ids:
         bpy.ops.mesh.primitive_ico_sphere_add(
-            location=blender_object.location + blender_object.data.vertices[kid].co, scale=(radius, radius, radius)
+            location=blender_object.matrix_world @ blender_object.data.vertices[kid].co, scale=(radius, radius, radius)
         )
 
 
@@ -177,7 +178,7 @@ CLOTH_TYPES = enum.Enum("CLOTH_TYPES", "TOWEL SHORTS TSHIRT")
 
 def generate_cloth_object(type: CLOTH_TYPES):
     if type == CLOTH_TYPES.TOWEL:
-        geometric_vertices, keypoints = create_towel_vertices(TowelTemplateConfig())
+        geometric_vertices, keypoints = create_towel_vertices(sample_towel_config())
         bezier_configs = sample_towel_bezier_config()
 
     elif type == CLOTH_TYPES.SHORTS:
@@ -194,7 +195,7 @@ def generate_cloth_object(type: CLOTH_TYPES):
 
     # triangulate
 
-    blender_object = create_blender_object_from_vertices("towel", cloth_vertices)
+    blender_object = create_blender_object_from_vertices(str.lower(type.name), cloth_vertices)
 
     if type == CLOTH_TYPES.TOWEL:
         bevel_configs = sample_towel_bevel_configs(new_keypoint_ids)
@@ -242,7 +243,6 @@ def attach_cloth_sim(blender_object):
 
 
 if __name__ == "__main__":
-    import bpy
     from airo_blender.materials import add_material
 
     np.random.seed(2023)
@@ -254,20 +254,20 @@ if __name__ == "__main__":
     subdivide_mesh(plane, 10)
     add_material(plane, (1, 0.5, 0.5, 1.0))
 
-    for idx in tqdm.trange(1):
-        ob, kp = generate_cloth_object(CLOTH_TYPES.SHORTS)
+    for idx in tqdm.trange(10):
+        ob, kp = generate_cloth_object(CLOTH_TYPES.TSHIRT)
         attach_cloth_sim(ob)
-        ob.location = np.array([idx % 10, idx // 10, 0.6])
-        x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.8, 2)
-        ob.rotation_euler = np.array([x_rot, y_rot, 0])
+        ob.location = np.array([idx % 10, idx // 10, 0.0])
+        # x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.8, 2)
+        # ob.rotation_euler = np.array([x_rot, y_rot, 0])
 
-    # for now no very large crumplings such as folded in half
-    # these would probably require pinning some vertices and animating them.
-    # see https://docs.blender.org/manual/en/latest/modeling/modifiers/generate/subdivision_surface.html
-    # and https://www.youtube.com/watch?v=C8C4GntM60o for animation
+        # for now no very large crumplings such as folded in half
+        # these would probably require pinning some vertices and animating them.
+        # see https://docs.blender.org/manual/en/latest/modeling/modifiers/generate/subdivision_surface.html
+        # and https://www.youtube.com/watch?v=C8C4GntM60o for animation
 
-    bpy.data.scenes["Scene"].frame_start = 0
-    for i in tqdm.trange(50):
-        bpy.context.scene.frame_set(i)
-
-    visualize_keypoints(ob, list(kp.values()))
+        # bpy.data.scenes["Scene"].frame_start = 0
+        # for i in tqdm.trange(50):
+        #     bpy.context.scene.frame_set(i)
+        print(list(kp.values()))
+        visualize_keypoints(ob, list(kp.values()))
