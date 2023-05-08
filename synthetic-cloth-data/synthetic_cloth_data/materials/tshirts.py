@@ -2,7 +2,7 @@ import bpy
 from synthetic_cloth_data.materials import RGBAColor
 from synthetic_cloth_data.materials.common import (
     ImageOnTextureConfig,
-    add_image_randomly_to_material,
+    add_image_to_material_base_color,
     create_evenly_colored_material,
     modify_bsdf_to_cloth,
 )
@@ -24,5 +24,5 @@ if __name__ == "__main__":
     material = create_evenly_colored_tshirts_material(red)
     material = modify_bsdf_to_cloth(material)
     path = str(pathlib.Path(__file__).parent / "test.jpg")
-    material = add_image_randomly_to_material(material, path, ImageOnTextureConfig())
+    material = add_image_to_material_base_color(material, path, ImageOnTextureConfig())
     plane.data.materials.append(material)

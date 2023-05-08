@@ -3,8 +3,8 @@ import pathlib
 import bpy
 from synthetic_cloth_data.materials.common import (
     ImageOnTextureConfig,
-    add_image_randomly_to_material,
-    create_striped_dish_towel_material,
+    add_image_to_material_base_color,
+    create_striped_material,
     modify_bsdf_to_cloth,
 )
 
@@ -30,10 +30,10 @@ if __name__ == "__main__":
     bpy.context.collection.objects.link(obj)
     red = (1.0, 0.0, 0.0, 1.0)
     blue = (0.0, 0.0, 1.0, 1.0)
-    material = create_striped_dish_towel_material(3, 0.5, blue, red)
+    material = create_striped_material(3, 0.5, blue, red)
     material = modify_bsdf_to_cloth(material)
     path = str(pathlib.Path(__file__).parent / "test.jpg")
-    material = add_image_randomly_to_material(material, path, ImageOnTextureConfig())
+    material = add_image_to_material_base_color(material, path, ImageOnTextureConfig())
     obj.data.materials.append(material)
 
     # activate the object and enter edit mode

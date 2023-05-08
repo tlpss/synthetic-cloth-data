@@ -2,7 +2,7 @@ import bpy
 from synthetic_cloth_data.materials.common import (
     _add_white_stripes_on_black_nodes,
     create_evenly_colored_material,
-    create_striped_dish_towel_material,
+    create_striped_material,
     modify_bsdf_to_cloth,
 )
 
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     bpy.ops.mesh.primitive_plane_add()
     plane = bpy.context.object
     red = (1.0, 0.0, 0.0, 1.0)
-    material = create_striped_dish_towel_material(3, 0.5, red)
+    material = create_striped_material(3, 0.5, red)
     material = modify_bsdf_to_cloth(material)
     plane.data.materials.append(material)
 

@@ -27,19 +27,18 @@ class ImageOnTextureConfig:
     image_y_scale: float = 0.5
 
 
-def add_image_randomly_to_material(
+def add_image_to_material_base_color(
     material: bpy.types.Material, image_path: str, config: ImageOnTextureConfig
 ) -> bpy.types.Material:
     # find the node and socket that are connected to the base color input of the principled bsdf
 
     color_input_node = material.node_tree.nodes["Principled BSDF"].inputs["Base Color"].links[0].from_node
-    # color_input_node_socket = (
-    #     material.node_tree.nodes["Principled BSDF"].inputs["Base Color"].links[0].from_socket.name
-    # )
-    # if color_input_node.name == "Mix Shader":
-    #     color_input_node_socket = 2  # has 3 outputs with similar name, but we need the one with index 2...
-    #     # TODO: can this be less hacky?
-    #     # can the sink id be queried?
+    color_input_node_socket = (
+        material.node_tree.nodes["Principled BSDF"]
+        .inputs["Base Color"]
+        .links[0]
+        .from_socket.identifier  # use identifier, names are not unique!
+    )
 
     # create nodes
     image_node = material.node_tree.nodes.new("ShaderNodeTexImage")
@@ -85,7 +84,7 @@ def add_image_randomly_to_material(
     material.node_tree.links.new(compare_y_node.outputs["Value"], multiply_node.inputs[1])
     material.node_tree.links.new(multiply_node.outputs["Value"], mix_node.inputs["Fac"])
     material.node_tree.links.new(image_node.outputs["Color"], mix_node.inputs["Color2"])
-    material.node_tree.links.new(color_input_node.outputs[2], mix_node.inputs["Color1"])
+    material.node_tree.links.new(color_input_node.outputs[color_input_node_socket], mix_node.inputs["Color1"])
 
     material.node_tree.links.new(
         mix_node.outputs["Color"], material.node_tree.nodes["Principled BSDF"].inputs["Base Color"]
@@ -146,7 +145,7 @@ def _add_white_stripes_on_black_nodes(
     return output_socket
 
 
-def create_striped_dish_towel_material(
+def create_striped_material(
     amount_of_stripes: int,
     stripe_width: float,
     stripe_color: tuple[float, float, float, float],
