@@ -19,7 +19,7 @@ def visualize_meshes(mesh_dir: str, max_amount_to_visualize: int = 100):
     meshes = list(pathlib.Path(mesh_dir).glob("*.obj"))
     print(f"Found {len(meshes)} meshes in {mesh_dir}")
     for idx in tqdm.trange(max_amount_to_visualize):
-        bpy.ops.import_scene.obj(filepath=str(meshes[idx]))
+        bpy.ops.import_scene.obj(filepath=str(meshes[idx]), split_mode="OFF")
         blender_obj = bpy.context.selected_objects[0]
 
         blender_obj.location = np.array([idx % 10, idx // 10, 0.01])
