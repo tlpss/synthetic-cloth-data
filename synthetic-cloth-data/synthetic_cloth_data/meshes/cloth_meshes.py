@@ -1,4 +1,3 @@
-import enum
 import sys
 from typing import List
 
@@ -24,6 +23,7 @@ from synthetic_cloth_data.meshes.mesh_operations import (
     subdivide_mesh,
     triangulate,
 )
+from synthetic_cloth_data.utils import CLOTH_TYPES
 
 
 def sample_towel_config() -> TowelTemplateConfig:
@@ -171,9 +171,6 @@ def visualize_keypoints(blender_object, vertex_ids):
         bpy.ops.mesh.primitive_ico_sphere_add(
             location=blender_object.matrix_world @ blender_object.data.vertices[kid].co, scale=(radius, radius, radius)
         )
-
-
-CLOTH_TYPES = enum.Enum("CLOTH_TYPES", "TOWEL SHORTS TSHIRT")
 
 
 def generate_cloth_object(type: CLOTH_TYPES):
