@@ -10,5 +10,5 @@ if __name__ == "__main__":
 
     asset_snapshot = {"assets": polyhaven_assets}
 
-    with open(POLYHAVEN_ASSETS_SNAPSHOT_PATH) as file:
+    with open(POLYHAVEN_ASSETS_SNAPSHOT_PATH, "x") as file:
         json.dump(asset_snapshot, file, indent=4)

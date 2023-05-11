@@ -1,4 +1,8 @@
+from __future__ import annotations
+
+import dataclasses
 import json
+from typing import Tuple
 
 import airo_blender as ab
 import bpy
@@ -7,91 +11,150 @@ import numpy as np
 from airo_dataset_tools.data_parsers.coco import CocoImage, CocoKeypointAnnotation
 from airo_dataset_tools.segmentation_mask_converter import BinarySegmentationMask
 from bpy_extras.object_utils import world_to_camera_view
+from mathutils import Vector
 from synthetic_cloth_data.utils import CLOTH_TYPE_TO_COCO_CATEGORY_ID, CLOTH_TYPES
 
 
-def build_procedural_cloth_scene(cloth_type: CLOTH_TYPES, worlds: list, cloth_meshes: list[str]):
-    add_hdri_background(worlds)
-    create_surface()
-    cloth_object, keypoint_vertex_ids = load_cloth_mesh(cloth_meshes)
+@dataclasses.dataclass
+class ClothSceneConfig:
+    cloth_type: CLOTH_TYPES
+    cloth_mesh_config: ClothMeshConfig
+    cloth_material_config: ClothMaterialConfig
+    camera_config: CameraConfig
+    hdri_config: HdriConfig
+    surface_config: SurfaceConfig
+
+
+def create_cloth_scene(config: ClothSceneConfig):
+    bpy.ops.object.delete()
+    add_hdri_background(config.hdri_config)
+    create_surface(config.surface_config)
+    cloth_object, keypoint_vertex_ids = load_cloth_mesh(config.cloth_mesh_config)
     cloth_object.pass_index = 1  # mark for segmentation mask rendering
-    add_camera(target_location=cloth_object.location)
+    add_camera(config.camera_config)
     # TODO: check if all keypoints are visible in the camera view, resample if not.
-    add_material_to_cloth_mesh(cloth_object, cloth_type)
+    add_material_to_cloth_mesh(
+        cloth_object=cloth_object, cloth_type=config.cloth_type, cloth_material_config=config.cloth_material_config
+    )
     return cloth_object, keypoint_vertex_ids
 
 
-def add_hdri_background(worlds):
-    random_world_info = np.random.choice(worlds)
-    world = ab.load_asset(**random_world_info)
+@dataclasses.dataclass
+class HdriConfig:
+    asset_dict: dict = dataclasses.field(default_factory=dict)
+
+
+def add_hdri_background(config: HdriConfig):
+    world = ab.load_asset(**config.asset_dict)
     bpy.context.scene.world = world
 
 
-def create_surface():
-    bpy.ops.mesh.primitive_plane_add(size=10)
+@dataclasses.dataclass
+class SurfaceConfig:
+    size: int = 5
+    rgb: Tuple[float, float, float] = (0.5, 0.5, 1)
+
+
+def create_surface(config: SurfaceConfig) -> bpy.types.Object:
+    bpy.ops.mesh.primitive_plane_add(size=config.size)
     plane = bpy.context.object
-    ab.add_material(plane, (0.5, 0.5, 1))
-    # simple RGB colors
-    # random textures
-    # random images
+    ab.add_material(plane, color=config.rgb)
+
+    # TODO: more complex surfaces:
+    # - random textures
+    # - random images
     return plane
 
 
-def add_camera(target_location: np.ndarray) -> bpy.types.Object:
+@dataclasses.dataclass
+class CameraConfig:
+    target_location_in_world_frame: np.ndarray = np.array([0, 0, 0])
+    camera_position_in_world_frame = np.array([0, 0, 1.5])
+    focal_length: int = 32
+
+
+def add_camera(config: CameraConfig) -> bpy.types.Object:
     camera = bpy.data.objects["Camera"]
 
-    def _sample_point_on_unit_sphere() -> np.ndarray:
-        point_gaussian_3D = np.random.randn(3)
-        point_on_unit_sphere = point_gaussian_3D / np.linalg.norm(point_gaussian_3D)
-        return point_on_unit_sphere
+    # def _sample_point_on_unit_sphere() -> np.ndarray:
+    #     point_gaussian_3D = np.random.randn(3)
+    #     point_on_unit_sphere = point_gaussian_3D / np.linalg.norm(point_gaussian_3D)
+    #     return point_on_unit_sphere
 
-    # Sample a point on the top part of the unit sphere
-    high_point = _sample_point_on_unit_sphere()
-    while high_point[2] < 0.75:
-        high_point = _sample_point_on_unit_sphere()
-
-    # Place the camera above the table
-    high_point[2] += target_location[2]
-    camera.location = high_point
+    camera.location = config.camera_position_in_world_frame
 
     # Make the camera look at the towel center
-    camera_direction = target_location - camera.location  # Note: these are mathutils Vectors
+    camera_direction = config.target_location_in_world_frame - camera.location  # Note: these are mathutils Vectors
+    camera_direction = Vector(camera_direction)
     camera.rotation_euler = camera_direction.to_track_quat("-Z", "Y").to_euler()
 
     # Set the camera focal length to 32 mm
-    camera.data.lens = 32
+    camera.data.lens = config.focal_length
     return camera
 
 
-def add_material_to_cloth_mesh(cloth_object, cloth_type):
+@dataclasses.dataclass
+class ClothMaterialConfig:
+    pass
+
+
+def add_material_to_cloth_mesh(
+    cloth_material_config: ClothMaterialConfig, cloth_object: bpy.types.Object, cloth_type: CLOTH_TYPES
+):
     pass
     # determine materials.
 
 
-def load_cloth_mesh(cloth_meshes):
-    cloth_mesh = np.random.choice(cloth_meshes)
+@dataclasses.dataclass
+class ClothMeshConfig:
+    mesh_path: str
+    position_in_world_frame: np.ndarray = np.array([0, 0, 0.01])
+    z_rotation: float = 0.0
+
+
+def load_cloth_mesh(config: ClothMeshConfig):
     # load the obj
-    bpy.ops.import_scene.obj(filepath=str(cloth_mesh), split_mode="OFF")
+
+    bpy.ops.import_scene.obj(
+        filepath=str(config.mesh_path), split_mode="OFF"
+    )  # keep vertex order with split_mode="OFF"
     cloth_object = bpy.context.selected_objects[0]
     # randomize position & orientation
-    cloth_object.location = (0.0, 0.0, 0.001)
-    cloth_object.rotation_euler[2] = 0.2
+    cloth_object.location = config.position_in_world_frame
+    cloth_object.rotation_euler[2] = config.z_rotation
 
-    keypoint_vertex_dict = json.load(open(str(cloth_mesh).replace(".obj", ".json")))
+    # convention is to have the keypoint vertex ids in a json file with the same name as the obj file
+    keypoint_vertex_dict = json.load(open(str(config.mesh_path).replace(".obj", ".json")))
     return cloth_object, keypoint_vertex_dict
 
 
-def render_scene(output_dir: str):
-    scene = bpy.context.scene
-    scene.render.engine = "CYCLES"
-    scene.cycles.samples = 16
+@dataclasses.dataclass
+class RendererConfig:
+    width: int = 512
+    height: int = 512
+    exposure: float = 0.0
+    gamma: float = 1.0
 
-    image_width, image_height = 512, 512
+
+class CyclesRendererConfig(RendererConfig):
+    num_samples: int = 32
+
+
+def render_scene(render_config: RendererConfig, output_dir: str):
+    scene = bpy.context.scene
+
+    if isinstance(render_config, CyclesRendererConfig):
+        scene.render.engine = "CYCLES"
+        scene.cycles.samples = render_config.num_samples
+    else:
+        raise NotImplementedError(f"Renderer config {render_config} not implemented")
+
+    image_width, image_height = render_config.width, render_config.height
     scene.render.resolution_x = image_width
     scene.render.resolution_y = image_height
 
-    # scene.view_settings.exposure = np.random.uniform(-2, 2)
-    # scene.view_settings.gamma = np.random.uniform(0.9, 1.1)
+    scene.view_settings.exposure = render_config.exposure
+    scene.view_settings.gamma = render_config.gamma
 
     # Make a directory to organize all the outputs
     os.makedirs(output_dir, exist_ok=True)
@@ -145,6 +208,12 @@ def render_scene(output_dir: str):
     os.rename(segmentation_path, segmentation_path_new)
 
 
+def _is_point_in_camera_frustum(point: np.ndarray, camera: bpy.types.Object) -> bool:
+    """Check if a point is in the camera frustum."""
+    # Get the camera matrix
+    raise NotImplementedError
+
+
 def create_annotations(
     cloth_type, output_dir: str, coco_id: int, cloth_object: bpy.types.Object, keypoint_vertex_dict: dict
 ):
@@ -157,7 +226,7 @@ def create_annotations(
     segmentation_mask = segmentation_mask > 0
 
     segmentation = BinarySegmentationMask(segmentation_mask)
-    polygon = segmentation.as_polygon
+    rle_mask = segmentation.as_compressed_rle
 
     bbox = segmentation.bbox
     x_min, y_min, width, height = bbox
@@ -194,14 +263,14 @@ def create_annotations(
         coco_keypoints += (px, py, visible_flag)
 
     category_id = CLOTH_TYPE_TO_COCO_CATEGORY_ID[cloth_type.name]
-
+    print(coco_keypoints)
     annotation = CocoKeypointAnnotation(
         category_id=category_id,
         id=coco_id,  # only one annotation per image, so we can use the image id for now. #TODO: make this more generic.
         image_id=coco_id,
         keypoints=coco_keypoints,
         num_keypoints=num_labeled_keypoints,
-        segmentation=polygon,
+        segmentation=rle_mask,
         area=segmentation.area,
         bbox=bbox,
         iscrowd=0,
@@ -220,11 +289,26 @@ def create_annotations(
         json.dump(annotation.dict(exclude_none=True), file, indent=4)
 
 
-def create_dataset_sample(cloth_type: CLOTH_TYPES, dataset_dir: str, id: int, cloth_mesh_path: str, hdri_path: str):
-    """should be called from a new blender instance."""
-    # remove default object
-    bpy.ops.object.delete()
+def create_sample(scene_config: ClothSceneConfig, render_config: RendererConfig, output_dir: str, coco_id: int):
+    cloth_object, keypoint_vertex_dict = create_cloth_scene(scene_config)
+    render_scene(render_config, output_dir)
+    create_annotations(scene_config.cloth_type, output_dir, coco_id, cloth_object, keypoint_vertex_dict)
 
+
+if __name__ == "__main__":
+    import os
+
+    from synthetic_cloth_data import DATA_DIR
+    from synthetic_cloth_data.synthetic_images.make_polyhaven_assets_snapshot import POLYHAVEN_ASSETS_SNAPSHOT_PATH
+
+    hdri_path = POLYHAVEN_ASSETS_SNAPSHOT_PATH
+    cloth_mesh_path = DATA_DIR / "flat_meshes" / "TSHIRT"
+    dataset_dir = DATA_DIR / "synthetic_images" / "test"
+    id = 0
+    cloth_type = CLOTH_TYPES.TSHIRT
+    output_dir = os.path.join(dataset_dir, str(id))
+
+    # load HDRIS
     with open(hdri_path, "r") as file:
         assets = json.load(file)["assets"]
     worlds = [asset for asset in assets if asset["type"] == "worlds"]
@@ -235,37 +319,15 @@ def create_dataset_sample(cloth_type: CLOTH_TYPES, dataset_dir: str, id: int, cl
     cloth_meshes = [DATA_DIR / "flat_meshes" / "TSHIRT" / mesh for mesh in cloth_meshes]
     cloth_meshes = [mesh for mesh in cloth_meshes if mesh.suffix == ".obj"]
 
-    cloth_object, keypoint_vertex_ids = build_procedural_cloth_scene(cloth_type, worlds, cloth_meshes)
-
-    dirname = os.path.join(dataset_dir, str(id))
-    render_scene(dirname)
-    create_annotations(cloth_type, dirname, id, cloth_object, keypoint_vertex_ids)
-
-
-if __name__ == "__main__":
-    import os
-
-    from synthetic_cloth_data import DATA_DIR
-    from synthetic_cloth_data.make_polyhaven_assets_snapshot import POLYHAVEN_ASSETS_SNAPSHOT_PATH
-
-    # TODO: how to pass configuration to blender script?
-    # cannot use CLI because blender has its own CLI
-    # have to run under subprocess instead of multiprocessing for the same reason
-    # and want to use a different process due to blender getting slower over time..
-    # so how to pass configs? dump config dict to json and read from blender script?
-    # @click.command()
-    # @click.option("--cloth_type", type=str, default="TSHIRT")
-    # @click.option("--dataset_dir", type=str, default=DATA_DIR / "coco_test")
-    # @click.option("--id", type=int, default=0)
-    # @click.option("--cloth_meshes_path", type=str, default=DATA_DIR / "flat_meshes" / "TSHIRT")
-    # @click.option("--hdri_path", type=str, default=POLYHAVEN_ASSETS_SNAPSHOT_PATH)
-    # def create_dataset_sample_cli(cloth_type, dataset_dir, id, cloth_meshes_path, hdri_path):
-    #     create_dataset_sample(cloth_type, dataset_dir, id, cloth_meshes_path,hdri_path)
-
-    create_dataset_sample(
-        CLOTH_TYPES.TSHIRT,
-        DATA_DIR / "coco_test",
-        1,
-        DATA_DIR / "flat_meshes" / "TSHIRT",
-        POLYHAVEN_ASSETS_SNAPSHOT_PATH,
+    config = ClothSceneConfig(
+        cloth_type=cloth_type,
+        cloth_mesh_config=ClothMeshConfig(
+            mesh_path=cloth_meshes[0],
+        ),
+        hdri_config=HdriConfig(asset_dict=worlds[0]),
+        cloth_material_config=ClothMaterialConfig(),
+        camera_config=CameraConfig(),
+        surface_config=SurfaceConfig(),
     )
+    render_config = CyclesRendererConfig()
+    create_sample(config, render_config, output_dir, id)
