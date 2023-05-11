@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
-from typing import Tuple
+from typing import List, Tuple
 
 import airo_blender as ab
 import bpy
@@ -21,7 +21,7 @@ class ClothSceneConfig:
     cloth_mesh_config: ClothMeshConfig
     cloth_material_config: ClothMaterialConfig
     camera_config: CameraConfig
-    hdri_config: HdriConfig
+    hdri_config: HDRIConfig
     surface_config: SurfaceConfig
 
 
@@ -31,8 +31,8 @@ def create_cloth_scene(config: ClothSceneConfig):
     create_surface(config.surface_config)
     cloth_object, keypoint_vertex_ids = load_cloth_mesh(config.cloth_mesh_config)
     cloth_object.pass_index = 1  # mark for segmentation mask rendering
-    add_camera(config.camera_config)
-    # TODO: check if all keypoints are visible in the camera view, resample if not.
+    add_camera(config.camera_config, cloth_object)
+    # TODO: check if all keypoints are visible in the camera view, resample (?) if not.
     add_material_to_cloth_mesh(
         cloth_object=cloth_object, cloth_type=config.cloth_type, cloth_material_config=config.cloth_material_config
     )
@@ -40,12 +40,13 @@ def create_cloth_scene(config: ClothSceneConfig):
 
 
 @dataclasses.dataclass
-class HdriConfig:
-    asset_dict: dict = dataclasses.field(default_factory=dict)
+class HDRIConfig:
+    hdri_asset_list: List[dict]  # blender HDRI assets as exported
 
 
-def add_hdri_background(config: HdriConfig):
-    world = ab.load_asset(**config.asset_dict)
+def add_hdri_background(config: HDRIConfig):
+    hdri_dict = np.random.choice(config.hdri_asset_list)
+    world = ab.load_asset(**hdri_dict)
     bpy.context.scene.world = world
 
 
@@ -68,23 +69,21 @@ def create_surface(config: SurfaceConfig) -> bpy.types.Object:
 
 @dataclasses.dataclass
 class CameraConfig:
-    target_location_in_world_frame: np.ndarray = np.array([0, 0, 0])
-    camera_position_in_world_frame = np.array([0, 0, 1.5])
     focal_length: int = 32
 
 
-def add_camera(config: CameraConfig) -> bpy.types.Object:
+def add_camera(config: CameraConfig, cloth_object) -> bpy.types.Object:
     camera = bpy.data.objects["Camera"]
 
-    # def _sample_point_on_unit_sphere() -> np.ndarray:
-    #     point_gaussian_3D = np.random.randn(3)
-    #     point_on_unit_sphere = point_gaussian_3D / np.linalg.norm(point_gaussian_3D)
-    #     return point_on_unit_sphere
+    def _sample_point_on_unit_sphere() -> np.ndarray:
+        point_gaussian_3D = np.random.randn(3)
+        point_on_unit_sphere = point_gaussian_3D / np.linalg.norm(point_gaussian_3D)
+        return point_on_unit_sphere
 
-    camera.location = config.camera_position_in_world_frame
+    camera.location = _sample_point_on_unit_sphere()
 
     # Make the camera look at the towel center
-    camera_direction = config.target_location_in_world_frame - camera.location  # Note: these are mathutils Vectors
+    camera_direction = cloth_object.location - camera.location  # Note: these are mathutils Vectors
     camera_direction = Vector(camera_direction)
     camera.rotation_euler = camera_direction.to_track_quat("-Z", "Y").to_euler()
 
@@ -263,7 +262,6 @@ def create_annotations(
         coco_keypoints += (px, py, visible_flag)
 
     category_id = CLOTH_TYPE_TO_COCO_CATEGORY_ID[cloth_type.name]
-    print(coco_keypoints)
     annotation = CocoKeypointAnnotation(
         category_id=category_id,
         id=coco_id,  # only one annotation per image, so we can use the image id for now. #TODO: make this more generic.
@@ -324,7 +322,7 @@ if __name__ == "__main__":
         cloth_mesh_config=ClothMeshConfig(
             mesh_path=cloth_meshes[0],
         ),
-        hdri_config=HdriConfig(asset_dict=worlds[0]),
+        hdri_config=HDRIConfig(hdri_asset_list=worlds),
         cloth_material_config=ClothMaterialConfig(),
         camera_config=CameraConfig(),
         surface_config=SurfaceConfig(),
