@@ -52,12 +52,16 @@ def add_hdri_background(config: HDRIConfig):
 
 @dataclasses.dataclass
 class SurfaceConfig:
-    size: int = 5
+    size_range: Tuple[float, float] = (1, 3)
     rgb: Tuple[float, float, float] = (0.5, 0.5, 1)
 
 
 def create_surface(config: SurfaceConfig) -> bpy.types.Object:
-    bpy.ops.mesh.primitive_plane_add(size=config.size)
+    size = np.random.uniform(*config.size_range, size=2)
+    bpy.ops.mesh.primitive_plane_add(size=1)
+    # scale the plane to the desired size (cannot do this on creation bc of weir thing in blender API
+    # :https://devtalk.blender.org/t/setting-scale-on-primitive-creation/28348 )
+    bpy.ops.transform.resize(value=(size[0], size[1], 1))
     plane = bpy.context.object
     ab.add_material(plane, color=config.rgb)
 
@@ -70,6 +74,7 @@ def create_surface(config: SurfaceConfig) -> bpy.types.Object:
 @dataclasses.dataclass
 class CameraConfig:
     focal_length: int = 32
+    minimal_camera_height: float = 0.5
 
 
 def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_vertices_dict: dict) -> bpy.types.Object:
@@ -79,20 +84,23 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
         point_gaussian_3D = np.random.randn(3)
         point_on_unit_sphere = point_gaussian_3D / np.linalg.norm(point_gaussian_3D)
         return point_on_unit_sphere
+        # TODO: better camera randomization?
+        # in upper half of unit sphere?
 
     camera_placed = False
     while not camera_placed:
         camera.location = _sample_point_on_unit_sphere()
-        camera_placed = camera.location[2] > 0  # only place the camera in front of the cloth
+        camera_placed = camera.location[2] > config.minimal_camera_height  # reasonable view heights
         camera_placed = camera_placed and _are_keypoints_in_camera_frustum(cloth_object, keypoint_vertices_dict)
 
-    # Make the camera look at the towel center
-    camera_direction = cloth_object.location - camera.location  # Note: these are mathutils Vectors
+    # Make the camera look at tthe origin, around which the cloth and table are assumed to be centered.
+    camera_direction = -camera.location
     camera_direction = Vector(camera_direction)
     camera.rotation_euler = camera_direction.to_track_quat("-Z", "Y").to_euler()
 
-    # Set the camera focal length to 32 mm
+    # Set the camera focal length
     camera.data.lens = config.focal_length
+    # TODO: randomize other camera parameters?
     return camera
 
 
@@ -111,8 +119,7 @@ def add_material_to_cloth_mesh(
 @dataclasses.dataclass
 class ClothMeshConfig:
     mesh_path: str
-    position_in_world_frame: np.ndarray = np.array([0, 0, 0.01])
-    z_rotation: float = 0.0
+    xy_randomization_range: float = 0.1
 
 
 def load_cloth_mesh(config: ClothMeshConfig):
@@ -123,8 +130,13 @@ def load_cloth_mesh(config: ClothMeshConfig):
     )  # keep vertex order with split_mode="OFF"
     cloth_object = bpy.context.selected_objects[0]
     # randomize position & orientation
-    cloth_object.location = config.position_in_world_frame
-    cloth_object.rotation_euler[2] = config.z_rotation
+    xy_position = np.random.uniform(-config.xy_randomization_range, config.xy_randomization_range, size=2)
+    cloth_object.location[0] = xy_position[0]
+    cloth_object.location[1] = xy_position[1]
+
+    cloth_object.location[2] = 0.001  # make sure the cloth is above the surface
+
+    cloth_object.rotation_euler[2] = np.random.rand() * 2 * np.pi
 
     # convention is to have the keypoint vertex ids in a json file with the same name as the obj file
     keypoint_vertex_dict = json.load(open(str(config.mesh_path).replace(".obj", ".json")))
@@ -140,7 +152,7 @@ class RendererConfig:
 
 
 class CyclesRendererConfig(RendererConfig):
-    num_samples: int = 32
+    num_samples: int = 16
 
 
 def render_scene(render_config: RendererConfig, output_dir: str):
