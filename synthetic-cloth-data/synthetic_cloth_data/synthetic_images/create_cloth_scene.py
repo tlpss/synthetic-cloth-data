@@ -31,7 +31,7 @@ def create_cloth_scene(config: ClothSceneConfig):
     create_surface(config.surface_config)
     cloth_object, keypoint_vertex_ids = load_cloth_mesh(config.cloth_mesh_config)
     cloth_object.pass_index = 1  # mark for segmentation mask rendering
-    add_camera(config.camera_config, cloth_object)
+    add_camera(config.camera_config, cloth_object, keypoint_vertex_ids)
     # TODO: check if all keypoints are visible in the camera view, resample (?) if not.
     add_material_to_cloth_mesh(
         cloth_object=cloth_object, cloth_type=config.cloth_type, cloth_material_config=config.cloth_material_config
@@ -72,7 +72,7 @@ class CameraConfig:
     focal_length: int = 32
 
 
-def add_camera(config: CameraConfig, cloth_object) -> bpy.types.Object:
+def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_vertices_dict: dict) -> bpy.types.Object:
     camera = bpy.data.objects["Camera"]
 
     def _sample_point_on_unit_sphere() -> np.ndarray:
@@ -80,7 +80,11 @@ def add_camera(config: CameraConfig, cloth_object) -> bpy.types.Object:
         point_on_unit_sphere = point_gaussian_3D / np.linalg.norm(point_gaussian_3D)
         return point_on_unit_sphere
 
-    camera.location = _sample_point_on_unit_sphere()
+    camera_placed = False
+    while not camera_placed:
+        camera.location = _sample_point_on_unit_sphere()
+        camera_placed = camera.location[2] > 0  # only place the camera in front of the cloth
+        camera_placed = camera_placed and _are_keypoints_in_camera_frustum(cloth_object, keypoint_vertices_dict)
 
     # Make the camera look at the towel center
     camera_direction = cloth_object.location - camera.location  # Note: these are mathutils Vectors
@@ -207,10 +211,26 @@ def render_scene(render_config: RendererConfig, output_dir: str):
     os.rename(segmentation_path, segmentation_path_new)
 
 
-def _is_point_in_camera_frustum(point: np.ndarray, camera: bpy.types.Object) -> bool:
+def _are_keypoints_in_camera_frustum(keypoint_vertex_dict: dict, camera: bpy.types.Object) -> bool:
+    """Check if all keypoints are in the camera frustum."""
+    for _, vertex_id in keypoint_vertex_dict.items():
+        point = bpy.data.objects["cloth"].data.vertices[vertex_id].co
+        if not _is_point_in_camera_frustum(point, camera):
+            return False
+    return True
+
+
+def _is_point_in_camera_frustum(point: Vector, camera: bpy.types.Object) -> bool:
     """Check if a point is in the camera frustum."""
-    # Get the camera matrix
-    raise NotImplementedError
+    # Project the point
+    scene = bpy.context.scene
+    projected_point = world_to_camera_view(scene, camera, point)
+    # Check if the point is in the frustum
+    return (
+        -1 <= projected_point[0] <= 1
+        and -1 <= projected_point[1] <= 1
+        and camera.data.clip_start <= projected_point[2] <= camera.data.clip_end
+    )
 
 
 def create_annotations(
