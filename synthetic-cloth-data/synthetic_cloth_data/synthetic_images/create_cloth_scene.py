@@ -12,11 +12,8 @@ from airo_dataset_tools.data_parsers.coco import CocoImage, CocoKeypointAnnotati
 from airo_dataset_tools.segmentation_mask_converter import BinarySegmentationMask
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
-from synthetic_cloth_data.materials.towels import (
-    create_evenly_colored_material,
-    create_gridded_dish_towel_material,
-    create_striped_material,
-)
+from synthetic_cloth_data.materials.common import create_evenly_colored_material
+from synthetic_cloth_data.materials.towels import create_gridded_dish_towel_material, create_striped_material
 from synthetic_cloth_data.utils import CLOTH_TYPE_TO_COCO_CATEGORY_ID, CLOTH_TYPES
 
 
@@ -72,9 +69,7 @@ def _sample_hsv_color():
 def _hsv_to_rgb(hsv: np.ndarray):
     assert hsv.shape == (3,)
     hsv = hsv.astype(np.float32)
-    print(hsv)
     rgb = cv2.cvtColor(hsv[np.newaxis, np.newaxis, ...], cv2.COLOR_HSV2RGB)
-    print(rgb)
     return rgb[0][0]
 
 
@@ -86,7 +81,6 @@ def create_surface(config: SurfaceConfig) -> bpy.types.Object:
     bpy.ops.transform.resize(value=(size[0], size[1], 1))
     plane = bpy.context.object
 
-    print(f"len config.textures_list: {len(config.textures_list)}")
     if np.random.rand() < config.texture_probability and len(config.textures_list) > 0:
         texture_dict = np.random.choice(config.textures_list)
         texture = ab.load_asset(**texture_dict)
@@ -219,7 +213,7 @@ def _add_material_to_towel_mesh(config: TowelMaterialConfig, cloth_object: bpy.t
 
 @dataclasses.dataclass
 class ClothMeshConfig:
-    mesh_path: str
+    mesh_dir: List[str]
     xy_randomization_range: float = 0.1
 
 
@@ -235,7 +229,7 @@ def load_cloth_mesh(config: ClothMeshConfig):
     cloth_object.location[0] = xy_position[0]
     cloth_object.location[1] = xy_position[1]
 
-    cloth_object.location[2] = 0.001  # make sure the cloth is above the surface
+    cloth_object.location[2] = 0.003  # make sure the cloth is above the surface
 
     cloth_object.rotation_euler[2] = np.random.rand() * 2 * np.pi
 
@@ -341,8 +335,8 @@ def _is_point_in_camera_frustum(point: Vector, camera: bpy.types.Object) -> bool
     projected_point = world_to_camera_view(scene, camera, point)
     # Check if the point is in the frustum
     return (
-        -1 <= projected_point[0] <= 1
-        and -1 <= projected_point[1] <= 1
+        0 <= projected_point[0] <= 1
+        and 0 <= projected_point[1] <= 1
         and camera.data.clip_start <= projected_point[2] <= camera.data.clip_end
     )
 
@@ -429,6 +423,7 @@ def create_sample(scene_config: ClothSceneConfig, render_config: RendererConfig,
 
 if __name__ == "__main__":
     import os
+    import sys
 
     from synthetic_cloth_data import DATA_DIR
     from synthetic_cloth_data.synthetic_images.make_polyhaven_assets_snapshot import POLYHAVEN_ASSETS_SNAPSHOT_PATH
@@ -436,12 +431,16 @@ if __name__ == "__main__":
     hdri_path = POLYHAVEN_ASSETS_SNAPSHOT_PATH
     cloth_mesh_path = DATA_DIR / "flat_meshes" / "TOWEL"
     dataset_dir = DATA_DIR / "synthetic_images" / "test"
-
-    id = 0
     cloth_type = CLOTH_TYPES.TOWEL
 
+    id = 10
+    # check if id was passed as argument
+    if "--" in sys.argv:
+        argv = sys.argv[sys.argv.index("--") + 1 :]
+        id = int(argv[argv.index("--id") + 1])
+
     output_dir = os.path.join(dataset_dir, str(id))
-    # np.random.seed(2023)
+    np.random.seed(2023 + id)
 
     # load HDRIS
     with open(hdri_path, "r") as file:
@@ -458,12 +457,13 @@ if __name__ == "__main__":
     config = ClothSceneConfig(
         cloth_type=cloth_type,
         cloth_mesh_config=ClothMeshConfig(
-            mesh_path=cloth_meshes[0],
+            mesh_path=cloth_meshes,
         ),
         hdri_config=HDRIConfig(hdri_asset_list=worlds),
-        cloth_material_config=TowelMaterialConfig(),
+        cloth_material_config=TowelMaterialConfig(),  # TODO: must be adapted to cloth type. -> Config.
         camera_config=CameraConfig(),
         surface_config=SurfaceConfig(textures_list=materials),
     )
     render_config = CyclesRendererConfig()
+
     create_sample(config, render_config, output_dir, id)
