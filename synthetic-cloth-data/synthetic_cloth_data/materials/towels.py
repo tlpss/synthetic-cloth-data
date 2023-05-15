@@ -1,7 +1,6 @@
 import bpy
 from synthetic_cloth_data.materials.common import (
     _add_white_stripes_on_black_nodes,
-    create_evenly_colored_material,
     create_striped_material,
     modify_bsdf_to_cloth,
 )
@@ -100,6 +99,6 @@ if __name__ == "__main__":
     pale_yellow = (1.0, 1.0, 0.5, 1.0)
     green = (0.0, 1.0, 0.0, 1.0)
     material = create_gridded_dish_towel_material(5, 5, 0.2, 0.2, pale_blue, pale_yellow, green)
-    material = create_evenly_colored_material(green)
+    # material = create_evenly_colored_material(green)
     material = modify_bsdf_to_cloth(material)
     plane_gridded.data.materials.append(material)

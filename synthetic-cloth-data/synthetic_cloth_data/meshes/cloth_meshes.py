@@ -253,10 +253,13 @@ if __name__ == "__main__":
 
     for idx in tqdm.trange(10):
         ob, kp = generate_cloth_object(CLOTH_TYPES.TSHIRT)
-        attach_cloth_sim(ob)
-        ob.location = np.array([idx % 10, idx // 10, 0.0])
-        # x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.8, 2)
-        # ob.rotation_euler = np.array([x_rot, y_rot, 0])
+        # attach_cloth_sim(ob)
+        ob.location = np.array([idx % 10, idx // 10, 0.001])
+        # update the object's world matrix
+        # cf. https://blender.stackexchange.com/questions/27667/incorrect-matrix-world-after-transformation
+        bpy.context.view_layer.update()
+        x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.8, 2)
+        ob.rotation_euler = np.array([x_rot, y_rot, 0])
 
         # for now no very large crumplings such as folded in half
         # these would probably require pinning some vertices and animating them.
@@ -266,5 +269,4 @@ if __name__ == "__main__":
         # bpy.data.scenes["Scene"].frame_start = 0
         # for i in tqdm.trange(50):
         #     bpy.context.scene.frame_set(i)
-        print(list(kp.values()))
         visualize_keypoints(ob, list(kp.values()))
