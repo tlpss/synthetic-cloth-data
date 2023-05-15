@@ -9,8 +9,8 @@ It contains
 
 ## Installation
 - git clone submodules recurse
-- create conda env
-- install & setup blender in airo-blender
+- create conda env: `conda env create -f environment.yaml`
+- install & setup blender in airo-blender: from the `airo-blender/blender` folder, run `source ../bash_scripts/setup_blender.sh << path-to-your-conda-env`
 
 ## Generating Data
 #TODO
