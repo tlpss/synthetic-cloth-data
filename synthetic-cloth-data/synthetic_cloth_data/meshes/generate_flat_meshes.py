@@ -36,4 +36,4 @@ if __name__ == "__main__":
 
     np.random.seed(2023)
     output_dir = DATA_DIR / "flat_meshes"
-    generate_dataset(CLOTH_TYPES.TSHIRT, 10, output_dir)
+    generate_dataset(CLOTH_TYPES.TOWEL, 100, output_dir)

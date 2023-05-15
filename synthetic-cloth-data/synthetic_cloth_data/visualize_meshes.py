@@ -23,6 +23,9 @@ def visualize_meshes(mesh_dir: str, max_amount_to_visualize: int = 100):
         blender_obj = bpy.context.selected_objects[0]
 
         blender_obj.location = np.array([idx % 10, idx // 10, 0.01])
+        # update the object's world matrix
+        # cf. https://blender.stackexchange.com/questions/27667/incorrect-matrix-world-after-transformation
+        bpy.context.view_layer.update()
         keypoint_ids = json.load(open(str(meshes[idx]).replace(".obj", ".json")))
         visualize_keypoints(blender_obj, vertex_ids=[int(k) for k in keypoint_ids.values()])
 
@@ -31,4 +34,4 @@ if __name__ == "__main__":
     from synthetic_cloth_data import DATA_DIR
 
     mesh_dir = DATA_DIR / "flat_meshes" / "TSHIRT"
-    visualize_meshes(mesh_dir, max_amount_to_visualize=4)
+    visualize_meshes(mesh_dir, max_amount_to_visualize=100)
