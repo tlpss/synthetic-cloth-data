@@ -13,7 +13,12 @@ def generate_cloth_data(dataset_size: int):
     print("generating cloth data")
     for seed in tqdm(range(dataset_size)):
         command = f"blender -b -P {script} -- --id {seed}"
-        subprocess.run([command], shell=True, stdout=subprocess.DEVNULL)
+        subprocess.run(
+            [command],
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
+        )
 
 
 if __name__ == "__main__":

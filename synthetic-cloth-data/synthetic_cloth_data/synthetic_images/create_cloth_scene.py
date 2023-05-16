@@ -12,7 +12,7 @@ from airo_dataset_tools.data_parsers.coco import CocoImage, CocoKeypointAnnotati
 from airo_dataset_tools.segmentation_mask_converter import BinarySegmentationMask
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
-from synthetic_cloth_data.materials.common import create_evenly_colored_material
+from synthetic_cloth_data.materials.common import create_evenly_colored_material, modify_bsdf_to_cloth
 from synthetic_cloth_data.materials.towels import create_gridded_dish_towel_material, create_striped_material
 from synthetic_cloth_data.utils import CLOTH_TYPE_TO_COCO_CATEGORY_ID, CLOTH_TYPES
 
@@ -55,14 +55,14 @@ def add_hdri_background(config: HDRIConfig):
 @dataclasses.dataclass
 class SurfaceConfig:
     size_range: Tuple[float, float] = (1, 3)
-    textures_list: List[dict] = dataclasses.field(default_factory=list)
-    texture_probability: float = 0.5
+    materials_list: List[dict] = dataclasses.field(default_factory=list)
+    polyhaven_material_probability: float = 0.5
 
 
 def _sample_hsv_color():
     hue = np.random.uniform(0, 180)
-    saturation = np.random.uniform(0.5, 1)
-    value = np.random.uniform(0.5, 1)
+    saturation = np.random.uniform(0.0, 1)
+    value = np.random.uniform(0.0, 1)
     return np.array([hue, saturation, value])
 
 
@@ -81,10 +81,14 @@ def create_surface(config: SurfaceConfig) -> bpy.types.Object:
     bpy.ops.transform.resize(value=(size[0], size[1], 1))
     plane = bpy.context.object
 
-    if np.random.rand() < config.texture_probability and len(config.textures_list) > 0:
-        texture_dict = np.random.choice(config.textures_list)
-        texture = ab.load_asset(**texture_dict)
-        plane.data.materials.append(texture)
+    if np.random.rand() < config.polyhaven_material_probability and len(config.materials_list) > 0:
+        material_dict = np.random.choice(config.materials_list)
+        material = ab.load_asset(**material_dict)
+
+        # disable actual mesh displacements as they change the geometry of the surface
+        # and are not used in collision checking, which can cause the cloth to become 'invisible' in renders
+        material.cycles.displacement_method = "BUMP"
+        plane.data.materials.append(material)
     else:
         hsv = _sample_hsv_color()
         rgb = _hsv_to_rgb(hsv)
@@ -101,6 +105,9 @@ class CameraConfig:
 
 def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_vertices_dict: dict) -> bpy.types.Object:
     camera = bpy.data.objects["Camera"]
+    # Set the camera focal length
+    camera.data.lens = config.focal_length
+    # TODO: randomize other camera parameters?
 
     def _sample_point_on_unit_sphere() -> np.ndarray:
         point_gaussian_3D = np.random.randn(3)
@@ -111,18 +118,19 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
 
     camera_placed = False
     while not camera_placed:
-        camera.location = _sample_point_on_unit_sphere()
+        print("trying to place camera")
+        camera.location = _sample_point_on_unit_sphere() * 1.5
+        bpy.context.view_layer.update()  # update the scene to get the new camera location
         camera_placed = camera.location[2] > config.minimal_camera_height  # reasonable view heights
-        camera_placed = camera_placed and _are_keypoints_in_camera_frustum(cloth_object, keypoint_vertices_dict)
+        camera_placed = camera_placed and _are_keypoints_in_camera_frustum(
+            cloth_object, keypoint_vertices_dict, camera
+        )
 
     # Make the camera look at tthe origin, around which the cloth and table are assumed to be centered.
     camera_direction = -camera.location
     camera_direction = Vector(camera_direction)
     camera.rotation_euler = camera_direction.to_track_quat("-Z", "Y").to_euler()
 
-    # Set the camera focal length
-    camera.data.lens = config.focal_length
-    # TODO: randomize other camera parameters?
     return camera
 
 
@@ -208,6 +216,7 @@ def _add_material_to_towel_mesh(config: TowelMaterialConfig, cloth_object: bpy.t
             horizontal_color,
             intersection_color,
         )
+    material = modify_bsdf_to_cloth(material)
     cloth_object.data.materials[0] = material
 
 
@@ -219,22 +228,20 @@ class ClothMeshConfig:
 
 def load_cloth_mesh(config: ClothMeshConfig):
     # load the obj
-
-    bpy.ops.import_scene.obj(
-        filepath=str(config.mesh_path), split_mode="OFF"
-    )  # keep vertex order with split_mode="OFF"
+    mesh_file = str(np.random.choice(config.mesh_dir))
+    bpy.ops.import_scene.obj(filepath=mesh_file, split_mode="OFF")  # keep vertex order with split_mode="OFF"
     cloth_object = bpy.context.selected_objects[0]
     # randomize position & orientation
     xy_position = np.random.uniform(-config.xy_randomization_range, config.xy_randomization_range, size=2)
     cloth_object.location[0] = xy_position[0]
     cloth_object.location[1] = xy_position[1]
 
-    cloth_object.location[2] = 0.003  # make sure the cloth is above the surface
+    cloth_object.location[2] = 0.001  # make sure the cloth is above the surface
 
     cloth_object.rotation_euler[2] = np.random.rand() * 2 * np.pi
 
     # convention is to have the keypoint vertex ids in a json file with the same name as the obj file
-    keypoint_vertex_dict = json.load(open(str(config.mesh_path).replace(".obj", ".json")))
+    keypoint_vertex_dict = json.load(open(str(mesh_file).replace(".obj", ".json")))
     return cloth_object, keypoint_vertex_dict
 
 
@@ -244,6 +251,7 @@ class RendererConfig:
     height: int = 512
     exposure: float = 0.0
     gamma: float = 1.0
+    device: str = "CPU"
 
 
 class CyclesRendererConfig(RendererConfig):
@@ -256,6 +264,7 @@ def render_scene(render_config: RendererConfig, output_dir: str):
     if isinstance(render_config, CyclesRendererConfig):
         scene.render.engine = "CYCLES"
         scene.cycles.samples = render_config.num_samples
+        scene.cycles.device = render_config.device
     else:
         raise NotImplementedError(f"Renderer config {render_config} not implemented")
 
@@ -319,10 +328,13 @@ def render_scene(render_config: RendererConfig, output_dir: str):
     os.rename(segmentation_path, segmentation_path_new)
 
 
-def _are_keypoints_in_camera_frustum(keypoint_vertex_dict: dict, camera: bpy.types.Object) -> bool:
+def _are_keypoints_in_camera_frustum(
+    cloth_object: bpy.types.Object, keypoint_vertex_dict: dict, camera: bpy.types.Object
+) -> bool:
     """Check if all keypoints are in the camera frustum."""
     for _, vertex_id in keypoint_vertex_dict.items():
-        point = bpy.data.objects["cloth"].data.vertices[vertex_id].co
+        point = cloth_object.data.vertices[vertex_id].co
+        point = cloth_object.matrix_world @ point
         if not _is_point_in_camera_frustum(point, camera):
             return False
     return True
@@ -332,8 +344,10 @@ def _is_point_in_camera_frustum(point: Vector, camera: bpy.types.Object) -> bool
     """Check if a point is in the camera frustum."""
     # Project the point
     scene = bpy.context.scene
+    print(point)
     projected_point = world_to_camera_view(scene, camera, point)
     # Check if the point is in the frustum
+    print(projected_point)
     return (
         0 <= projected_point[0] <= 1
         and 0 <= projected_point[1] <= 1
@@ -433,7 +447,7 @@ if __name__ == "__main__":
     dataset_dir = DATA_DIR / "synthetic_images" / "test"
     cloth_type = CLOTH_TYPES.TOWEL
 
-    id = 10
+    id = 7
     # check if id was passed as argument
     if "--" in sys.argv:
         argv = sys.argv[sys.argv.index("--") + 1 :]
@@ -457,12 +471,12 @@ if __name__ == "__main__":
     config = ClothSceneConfig(
         cloth_type=cloth_type,
         cloth_mesh_config=ClothMeshConfig(
-            mesh_path=cloth_meshes,
+            mesh_dir=cloth_meshes,
         ),
         hdri_config=HDRIConfig(hdri_asset_list=worlds),
         cloth_material_config=TowelMaterialConfig(),  # TODO: must be adapted to cloth type. -> Config.
         camera_config=CameraConfig(),
-        surface_config=SurfaceConfig(textures_list=materials),
+        surface_config=SurfaceConfig(materials_list=materials),
     )
     render_config = CyclesRendererConfig()
 
