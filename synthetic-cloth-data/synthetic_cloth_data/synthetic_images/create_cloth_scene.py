@@ -51,6 +51,13 @@ def add_hdri_background(config: HDRIConfig):
     world = ab.load_asset(**hdri_dict)
     bpy.context.scene.world = world
 
+    # set Polyhaven HDRI resolution to 4k
+    # requires creating manual context override, although this is not documented ofc.
+    override = bpy.context.copy()
+    override["world"] = bpy.context.scene.world
+    with bpy.context.temp_override(**override):
+        bpy.ops.pha.resolution_switch(res="4k", asset_id=bpy.context.world.name)
+
 
 @dataclasses.dataclass
 class SurfaceConfig:
@@ -99,32 +106,51 @@ def create_surface(config: SurfaceConfig) -> bpy.types.Object:
 
 @dataclasses.dataclass
 class CameraConfig:
-    focal_length: int = 32
+    # intrinsics
+    focal_length: int = 20  # ZED2i focal length
+    horizontal_resolution: int = 512
+    vertical_resolution: int = 288  # 16:9 aspect ratio
+    horizontal_sensor_size = 38  # ZED2i horizontal sensor size
+
+    # extrinsics
     minimal_camera_height: float = 0.5
+    max_sphere_radius: float = 2
 
 
 def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_vertices_dict: dict) -> bpy.types.Object:
     camera = bpy.data.objects["Camera"]
-    # Set the camera focal length
-    camera.data.lens = config.focal_length
-    # TODO: randomize other camera parameters?
 
-    def _sample_point_on_unit_sphere() -> np.ndarray:
-        point_gaussian_3D = np.random.randn(3)
-        point_on_unit_sphere = point_gaussian_3D / np.linalg.norm(point_gaussian_3D)
+    # Set the camera intrinsics
+    # cf https://docs.blender.org/manual/en/latest/render/cameras.html for more info.
+    camera.data.lens = config.focal_length
+    camera.data.sensor_width = config.horizontal_sensor_size
+    camera.data.sensor_fit = "HORIZONTAL"
+    camera.data.type = "PERSP"
+
+    image_width, image_height = config.horizontal_resolution, config.vertical_resolution
+    scene = bpy.context.scene
+    scene.render.resolution_x = image_width
+    scene.render.resolution_y = image_height
+
+    # TODO: randomize camera parameters?
+
+    def _sample_point_on_unit_sphere(z_min: float) -> np.ndarray:
+        """sample a point on the unit sphere, with z coordinate >= z_min, and uniform distribution of the height z in that range"""
+        z = np.random.uniform(z_min, 1)
+        phi = np.random.uniform(0, 2 * np.pi)
+        x = np.sqrt(1 - z**2) * np.cos(phi)
+        y = np.sqrt(1 - z**2) * np.sin(phi)
+        point_on_unit_sphere = np.array([x, y, z])
         return point_on_unit_sphere
-        # TODO: better camera randomization?
-        # in upper half of unit sphere?
 
     camera_placed = False
     while not camera_placed:
-        print("trying to place camera")
-        camera.location = _sample_point_on_unit_sphere() * 1.5
-        bpy.context.view_layer.update()  # update the scene to get the new camera location
-        camera_placed = camera.location[2] > config.minimal_camera_height  # reasonable view heights
-        camera_placed = camera_placed and _are_keypoints_in_camera_frustum(
-            cloth_object, keypoint_vertices_dict, camera
+        camera.location = _sample_point_on_unit_sphere(z_min=config.minimal_camera_height) * np.random.uniform(
+            1, config.max_sphere_radius
         )
+        # print(f"Camera location: {camera.location}")
+        bpy.context.view_layer.update()  # update the scene to get the new camera location
+        camera_placed = _are_keypoints_in_camera_frustum(cloth_object, keypoint_vertices_dict, camera)
 
     # Make the camera look at tthe origin, around which the cloth and table are assumed to be centered.
     camera_direction = -camera.location
@@ -247,15 +273,13 @@ def load_cloth_mesh(config: ClothMeshConfig):
 
 @dataclasses.dataclass
 class RendererConfig:
-    width: int = 512
-    height: int = 512
     exposure: float = 0.0
     gamma: float = 1.0
-    device: str = "CPU"
+    device: str = "GPU"
 
 
 class CyclesRendererConfig(RendererConfig):
-    num_samples: int = 16
+    num_samples: int = 256
 
 
 def render_scene(render_config: RendererConfig, output_dir: str):
@@ -267,10 +291,6 @@ def render_scene(render_config: RendererConfig, output_dir: str):
         scene.cycles.device = render_config.device
     else:
         raise NotImplementedError(f"Renderer config {render_config} not implemented")
-
-    image_width, image_height = render_config.width, render_config.height
-    scene.render.resolution_x = image_width
-    scene.render.resolution_y = image_height
 
     # TODO: randomize exposure and gamma
     scene.view_settings.exposure = render_config.exposure
@@ -344,10 +364,8 @@ def _is_point_in_camera_frustum(point: Vector, camera: bpy.types.Object) -> bool
     """Check if a point is in the camera frustum."""
     # Project the point
     scene = bpy.context.scene
-    print(point)
     projected_point = world_to_camera_view(scene, camera, point)
     # Check if the point is in the frustum
-    print(projected_point)
     return (
         0 <= projected_point[0] <= 1
         and 0 <= projected_point[1] <= 1
@@ -453,7 +471,7 @@ if __name__ == "__main__":
         argv = sys.argv[sys.argv.index("--") + 1 :]
         id = int(argv[argv.index("--id") + 1])
 
-    output_dir = os.path.join(dataset_dir, str(id))
+    output_dir = os.path.join(dataset_dir, f"{id:06d}")
     np.random.seed(2023 + id)
 
     # load HDRIS
