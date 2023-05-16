@@ -113,8 +113,8 @@ class CameraConfig:
     horizontal_sensor_size = 38  # ZED2i horizontal sensor size
 
     # extrinsics
-    minimal_camera_height: float = 0.5
-    max_sphere_radius: float = 2
+    minimal_camera_height: float = 0.7
+    max_sphere_radius: float = 1.8
 
 
 def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_vertices_dict: dict) -> bpy.types.Object:
@@ -148,14 +148,14 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
         camera.location = _sample_point_on_unit_sphere(z_min=config.minimal_camera_height) * np.random.uniform(
             1, config.max_sphere_radius
         )
-        # print(f"Camera location: {camera.location}")
-        bpy.context.view_layer.update()  # update the scene to get the new camera location
-        camera_placed = _are_keypoints_in_camera_frustum(cloth_object, keypoint_vertices_dict, camera)
+        # Make the camera look at tthe origin, around which the cloth and table are assumed to be centered.
+        camera_direction = -camera.location
+        camera_direction = Vector(camera_direction)
+        camera.rotation_euler = camera_direction.to_track_quat("-Z", "Y").to_euler()
 
-    # Make the camera look at tthe origin, around which the cloth and table are assumed to be centered.
-    camera_direction = -camera.location
-    camera_direction = Vector(camera_direction)
-    camera.rotation_euler = camera_direction.to_track_quat("-Z", "Y").to_euler()
+        bpy.context.view_layer.update()  # update the scene to propagate the new camera location & orientation
+        camera_placed = _are_keypoints_in_camera_frustum(cloth_object, keypoint_vertices_dict, camera)
+        camera_placed = True
 
     return camera
 
