@@ -18,7 +18,8 @@ def visualize_meshes(mesh_dir: str, max_amount_to_visualize: int = 100):
 
     meshes = list(pathlib.Path(mesh_dir).glob("*.obj"))
     print(f"Found {len(meshes)} meshes in {mesh_dir}")
-    for idx in tqdm.trange(max_amount_to_visualize):
+    n_meshes = min(len(meshes), max_amount_to_visualize)
+    for idx in tqdm.trange(n_meshes):
         bpy.ops.import_scene.obj(filepath=str(meshes[idx]), split_mode="OFF")
         blender_obj = bpy.context.selected_objects[0]
 
@@ -33,5 +34,5 @@ def visualize_meshes(mesh_dir: str, max_amount_to_visualize: int = 100):
 if __name__ == "__main__":
     from synthetic_cloth_data import DATA_DIR
 
-    mesh_dir = DATA_DIR / "flat_meshes" / "TSHIRT"
+    mesh_dir = DATA_DIR / "deformed_meshes" / "TOWEL"
     visualize_meshes(mesh_dir, max_amount_to_visualize=100)

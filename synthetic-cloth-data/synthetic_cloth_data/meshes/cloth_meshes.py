@@ -211,13 +211,14 @@ def generate_cloth_object(type: CLOTH_TYPES):
     return blender_object, keypoint_ids
 
 
-def attach_cloth_sim(blender_object):
+def attach_cloth_sim(blender_object, solifify=True):
     bpy.ops.object.select_all(action="DESELECT")
     bpy.context.view_layer.objects.active = blender_object
     blender_object.select_set(True)
     # add solidify modifier
-    bpy.ops.object.modifier_add(type="SOLIDIFY")
-    bpy.context.object.modifiers["Solidify"].thickness = np.random.uniform(0.001, 0.005)
+    if solifify:
+        bpy.ops.object.modifier_add(type="SOLIDIFY")
+        bpy.context.object.modifiers["Solidify"].thickness = np.random.uniform(0.001, 0.005)
     bpy.ops.object.modifier_add(type="CLOTH")
     # helps with smoothing of the mesh after deformation
     bpy.ops.object.shade_smooth()
@@ -257,9 +258,9 @@ if __name__ == "__main__":
         ob.location = np.array([idx % 10, idx // 10, 0.001])
         # update the object's world matrix
         # cf. https://blender.stackexchange.com/questions/27667/incorrect-matrix-world-after-transformation
-        bpy.context.view_layer.update()
         x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.8, 2)
         ob.rotation_euler = np.array([x_rot, y_rot, 0])
+        bpy.context.view_layer.update()
 
         # for now no very large crumplings such as folded in half
         # these would probably require pinning some vertices and animating them.
