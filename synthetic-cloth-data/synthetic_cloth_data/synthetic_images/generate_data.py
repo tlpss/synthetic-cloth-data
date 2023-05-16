@@ -11,14 +11,10 @@ script = pathlib.Path(__file__).parent / "create_cloth_scene.py"
 @click.option("--dataset-size", default=10, help="Number of samples to generate")
 def generate_cloth_data(dataset_size: int):
     print("generating cloth data")
+    log_file = pathlib.Path("data-gen.log").open("w")
     for seed in tqdm(range(dataset_size)):
         command = f"blender -b -P {script} -- --id {seed}"
-        subprocess.run(
-            [command],
-            shell=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.STDOUT,
-        )
+        subprocess.run([command], shell=True, stdout=log_file, stderr=log_file)
 
 
 if __name__ == "__main__":
