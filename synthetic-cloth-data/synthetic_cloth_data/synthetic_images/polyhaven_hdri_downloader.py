@@ -25,7 +25,13 @@ if __name__ == "__main__":
 
     for asset in tqdm.tqdm(assets):
         json_path = polyhaven_assets_path + "/" + asset + "/info.json"
-        info_dict = json.load(open(json_path, "r"))
+        try: 
+            info_dict = json.load(open(json_path, "r"))
+        except:
+            print(f"could not open json: {json_path}")
+            continue
+
+    
         if info_dict["type"] != 0:  # HDRI
             continue
         if "indoor" not in info_dict["categories"]:
@@ -39,6 +45,12 @@ if __name__ == "__main__":
         # avoid 403 error by providing 'User-Agent' header
         # https://github.com/Poly-Haven/polyhavenassets/blob/259c0a96a70414ab3d1943c720d885e471aac192/constants.py#L11
         header.update({"User-Agent": "Blender: PH Assets"})
+        target_path = json_path.replace("/info.json", hdri_url.split("/")[-1])
+        print(target_path)
+
+        if os.path.exists(target_path):
+            print("HDRI already present, skip")
+            continue
         result = requests.get(hdri_url, headers=header)
-        with open(json_path.replace("info.json", hdri_url.split("/")[-1]), "wb") as file:
+        with open(target_path, "wb") as file:
             file.write(result.content)
