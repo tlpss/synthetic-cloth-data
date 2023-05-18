@@ -2,3 +2,6 @@
 	path = airo-blender
 	url = https://github.com/airo-ugent/airo-blender.git
 
+[submodule "synthetic-cloth-data/synthetic_cloth_data/linen"]
+	path = synthetic-cloth-data/synthetic_cloth_data/linen
+	url = https://github.com/Victorlouisdg/linen
