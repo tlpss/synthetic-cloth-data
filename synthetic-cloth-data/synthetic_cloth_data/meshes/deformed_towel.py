@@ -106,7 +106,7 @@ def generate_random_deformed_towel(random_seed: int = 2023, debug_visualizations
     ob.location = np.array([idx % 10, idx // 10, 1.0])
     # update the object's world matrix
     # cf. https://blender.stackexchange.com/questions/27667/incorrect-matrix-world-after-transformation
-    x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.1, 2)
+    x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.2, 2)
     ob.rotation_euler = np.array([x_rot, y_rot, 0])
     bpy.context.view_layer.update()
 
@@ -160,7 +160,7 @@ def generate_random_deformed_towel(random_seed: int = 2023, debug_visualizations
 
     # let gravity work for a while
     scene.frame_start = 1
-    scene.frame_end = path_end_frame + 25
+    scene.frame_end = path_end_frame + 35
 
     if debug_visualizations:
         visualize_keypoints(ob, list(kp.values()))
