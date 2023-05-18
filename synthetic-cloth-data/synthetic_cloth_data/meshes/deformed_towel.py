@@ -106,7 +106,7 @@ def generate_random_deformed_towel(random_seed: int = 2023, debug_visualizations
     ob.location = np.array([idx % 10, idx // 10, 1.0])
     # update the object's world matrix
     # cf. https://blender.stackexchange.com/questions/27667/incorrect-matrix-world-after-transformation
-    x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.8, 2)
+    x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.1, 2)
     ob.rotation_euler = np.array([x_rot, y_rot, 0])
     bpy.context.view_layer.update()
 
@@ -146,7 +146,7 @@ def generate_random_deformed_towel(random_seed: int = 2023, debug_visualizations
     grasped_vertex_group, path_end_frame = animate_grasped_vertex(ob, grasped_vertex_id, position_trajectory)
 
     # Set the pin group to the vertex group
-    attach_cloth_sim(ob, solifify=False)
+    attach_cloth_sim(ob, solifify=True)
     cloth_modifier = ob.modifiers["Cloth"]
     cloth_modifier.settings.vertex_group_mass = grasped_vertex_group.name
 
@@ -169,8 +169,45 @@ def generate_random_deformed_towel(random_seed: int = 2023, debug_visualizations
         scene.frame_set(frame)
 
     bpy.context.view_layer.update()
+
     return ob, kp
 
 
 if __name__ == "__main__":
-    generate_random_deformed_towel(debug_visualizations=True)
+    import json
+    import os
+    import sys
+
+    from synthetic_cloth_data import DATA_DIR
+
+    id = 8
+    debug = False
+    output_dir = DATA_DIR / "deformed_meshes" / "towel"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # check if id was passed as argument
+    if "--" in sys.argv:
+        argv = sys.argv[sys.argv.index("--") + 1 :]
+        id = int(argv[argv.index("--id") + 1])
+        debug = "--debug" in argv
+    print(id)
+    blender_object, keypoint_ids = generate_random_deformed_towel(id, debug_visualizations=debug)
+    if not debug:
+        print("saving")
+        filename = f"{id:06d}.obj"
+        # select new object and  save as obj file
+        bpy.ops.object.select_all(action="DESELECT")
+        bpy.context.view_layer.objects.active = blender_object
+        blender_object.select_set(True)
+        bpy.ops.export_scene.obj(
+            filepath=os.path.join(output_dir, filename),
+            use_selection=True,
+            use_materials=False,
+            keep_vertex_order=True,
+            check_existing=False,
+        )
+        print("keypoints")
+        # write keypoints to json file
+        with open(os.path.join(output_dir, filename.replace(".obj", ".json")), "w") as f:
+            json.dump(keypoint_ids, f)
+    print("done")
