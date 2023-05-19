@@ -258,8 +258,6 @@ if __name__ == "__main__":
         ob.location = np.array([idx % 10, idx // 10, 0.001])
         # update the object's world matrix
         # cf. https://blender.stackexchange.com/questions/27667/incorrect-matrix-world-after-transformation
-        x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.8, 2)
-        ob.rotation_euler = np.array([x_rot, y_rot, 0])
         bpy.context.view_layer.update()
 
         # for now no very large crumplings such as folded in half

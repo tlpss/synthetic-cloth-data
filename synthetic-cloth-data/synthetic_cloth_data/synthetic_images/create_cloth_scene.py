@@ -177,23 +177,10 @@ def add_material_to_cloth_mesh(config: ClothMaterialConfig, cloth_object: bpy.ty
         _add_material_to_towel_mesh(config, cloth_object)
 
 
-def _unwrap_towel(towel_object: bpy.types.Object):
-    # UV unwrap the towel template
-
-    # activate the object and enter edit mode
-    bpy.context.view_layer.objects.active = towel_object
-    bpy.ops.object.mode_set(mode="EDIT")
-
-    # unwrap UV for rendering
-    bpy.ops.uv.unwrap(method="ANGLE_BASED", margin=0.001)
-
-    # exit edit mode
-    bpy.ops.object.mode_set(mode="OBJECT")
 
 
 def _add_material_to_towel_mesh(config: TowelMaterialConfig, cloth_object: bpy.types.Object):
 
-    _unwrap_towel(cloth_object)
     material_sample = np.random.rand()
 
     if material_sample < config.uniform_color_probability:
@@ -279,7 +266,7 @@ class RendererConfig:
 
 
 class CyclesRendererConfig(RendererConfig):
-    num_samples: int = 256
+    num_samples: int = 64
 
 
 def render_scene(render_config: RendererConfig, output_dir: str):
@@ -461,8 +448,8 @@ if __name__ == "__main__":
     from synthetic_cloth_data.synthetic_images.make_polyhaven_assets_snapshot import POLYHAVEN_ASSETS_SNAPSHOT_PATH
 
     hdri_path = POLYHAVEN_ASSETS_SNAPSHOT_PATH
-    cloth_mesh_path = DATA_DIR / "flat_meshes" / "TOWEL"
-    dataset_dir = DATA_DIR / "synthetic_images" / "test"
+    cloth_mesh_path = DATA_DIR / "deformed_meshes" / "towel"
+    dataset_dir = DATA_DIR / "synthetic_images" / "deformed_test"
     cloth_type = CLOTH_TYPES.TOWEL
 
     id = 7
@@ -477,7 +464,7 @@ if __name__ == "__main__":
     # load HDRIS
     with open(hdri_path, "r") as file:
         assets = json.load(file)["assets"]
-    worlds = [asset for asset in assets if asset["type"] == "worlds"]
+    worlds = [asset for asset in assets if asset["type"] == "worlds" and "indoor" in asset["tags"]]
     materials = [asset for asset in assets if asset["type"] == "materials"]
 
     # load cloth meshes
