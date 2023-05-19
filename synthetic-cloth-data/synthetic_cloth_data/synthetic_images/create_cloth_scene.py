@@ -177,8 +177,6 @@ def add_material_to_cloth_mesh(config: ClothMaterialConfig, cloth_object: bpy.ty
         _add_material_to_towel_mesh(config, cloth_object)
 
 
-
-
 def _add_material_to_towel_mesh(config: TowelMaterialConfig, cloth_object: bpy.types.Object):
 
     material_sample = np.random.rand()
@@ -448,7 +446,7 @@ if __name__ == "__main__":
     from synthetic_cloth_data.synthetic_images.make_polyhaven_assets_snapshot import POLYHAVEN_ASSETS_SNAPSHOT_PATH
 
     hdri_path = POLYHAVEN_ASSETS_SNAPSHOT_PATH
-    cloth_mesh_path = DATA_DIR / "deformed_meshes" / "towel"
+    cloth_mesh_path = DATA_DIR / "deformed_meshes" / "TOWEL"
     dataset_dir = DATA_DIR / "synthetic_images" / "deformed_test"
     cloth_type = CLOTH_TYPES.TOWEL
 

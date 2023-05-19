@@ -1,6 +1,7 @@
 from typing import Tuple
 
 import bpy
+import loguru
 import numpy as np
 from airo_blender.materials import add_material
 from airo_typing import Vector3DType, Vectors3DType
@@ -13,6 +14,8 @@ from synthetic_cloth_data.meshes.cloth_meshes import attach_cloth_sim, generate_
 from synthetic_cloth_data.meshes.generate_flat_meshes import _unwrap_cloth_mesh
 from synthetic_cloth_data.meshes.mesh_operations import subdivide_mesh
 from synthetic_cloth_data.utils import CLOTH_TYPES
+
+logger = loguru.logger
 
 
 def project_vector_onto_plane(vector: Vector3DType, plane_normal: Vector3DType) -> Vector3DType:
@@ -92,21 +95,19 @@ def animate_grasped_vertex(ob: bpy.types.Object, grasped_vertex_id: int, positio
 def generate_random_deformed_towel(random_seed: int = 2023, debug_visualizations=False) -> bpy.types.Object:
     np.random.seed(random_seed)
     bpy.ops.object.delete()  # Delete default cube
-    bpy.ops.mesh.primitive_plane_add(size=12, location=(5, 5, 0))
+    bpy.ops.mesh.primitive_plane_add(size=2, location=(0, 0, 0))
     bpy.ops.object.modifier_add(type="COLLISION")
     bpy.context.object.collision.cloth_friction = np.random.uniform(5.0, 30.0)
     plane = bpy.context.object
     subdivide_mesh(plane, 10)
     add_material(plane, (1, 0.5, 0.5, 1.0))
 
-    idx = 0
-
     # for idx in tqdm.trange(10):
     ob, kp = generate_cloth_object(CLOTH_TYPES.TOWEL)
-    #TODO: reuse existing meshes
+    # TODO: reuse existing meshes
     _unwrap_cloth_mesh(ob)
     # attach_cloth_sim(ob)
-    ob.location = np.array([idx % 10, idx // 10, 1.0])
+    ob.location = np.array([0, 0, 1.0])
     # update the object's world matrix
     # cf. https://blender.stackexchange.com/questions/27667/incorrect-matrix-world-after-transformation
     x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.2, 2)
@@ -161,16 +162,28 @@ def generate_random_deformed_towel(random_seed: int = 2023, debug_visualizations
     scene.use_gravity = True
     scene.keyframe_insert(data_path="use_gravity", frame=path_end_frame)
 
-    # let gravity work for a while
     scene.frame_start = 1
-    scene.frame_end = path_end_frame + 35
 
     if debug_visualizations:
         visualize_keypoints(ob, list(kp.values()))
 
-    for frame in range(scene.frame_start, scene.frame_end + 1):
-        scene.frame_set(frame)
+    for i in range(1, path_end_frame):
+        scene.frame_set(i)
 
+    # let gravity work for a while
+    MAX_GRAVITY_FRAMES = 100
+    current_frame = path_end_frame
+    max_frames = MAX_GRAVITY_FRAMES + current_frame
+    while current_frame < max_frames:
+        scene.frame_set(current_frame)
+        current_frame += 1
+        # check if all vertices' z coordinates are close enough to zero,
+        # indicating that the cloth has fallen to the ground
+        if all([(ob.matrix_world @ v.co).z < 0.05 for v in ob.data.vertices]):
+            logger.debug(f"cloth has fallen to the ground at frame {current_frame}")
+            break
+
+    scene.frame_end = current_frame
     bpy.context.view_layer.update()
 
     return ob, kp
@@ -183,9 +196,9 @@ if __name__ == "__main__":
 
     from synthetic_cloth_data import DATA_DIR
 
-    id = 8
-    debug = False
-    output_dir = DATA_DIR / "deformed_meshes" / "towel"
+    id = 16
+    debug = True
+    output_dir = DATA_DIR / "deformed_meshes" / "TOWEL"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # check if id was passed as argument
@@ -193,10 +206,10 @@ if __name__ == "__main__":
         argv = sys.argv[sys.argv.index("--") + 1 :]
         id = int(argv[argv.index("--id") + 1])
         debug = "--debug" in argv
-    print(id)
+    logger.info(f"generating deformed towel with id {id}")
     blender_object, keypoint_ids = generate_random_deformed_towel(id, debug_visualizations=debug)
     if not debug:
-        print("saving")
+        logger.info("saving files")
         filename = f"{id:06d}.obj"
         # select new object and  save as obj file
         bpy.ops.object.select_all(action="DESELECT")
@@ -206,12 +219,11 @@ if __name__ == "__main__":
             filepath=os.path.join(output_dir, filename),
             use_selection=True,
             use_materials=False,
-            keep_vertex_order=True, # important for keypoints
+            keep_vertex_order=True,  # important for keypoints
             check_existing=False,
-            use_uvs=True, # save UV coordinates
+            use_uvs=True,  # save UV coordinates
         )
-        print("keypoints")
         # write keypoints to json file
         with open(os.path.join(output_dir, filename.replace(".obj", ".json")), "w") as f:
             json.dump(keypoint_ids, f)
-    print("done")
+    logger.info("completed")

@@ -22,6 +22,6 @@ if __name__ == "__main__":
     from synthetic_cloth_data import DATA_DIR
 
     output_dir = DATA_DIR / "deformed_meshes"
-    num_samples = 10
+    num_samples = 20
     cloth_type = CLOTH_TYPES.TOWEL
     generate_dataset(cloth_type, num_samples, output_dir)
