@@ -179,7 +179,10 @@ def generate_random_deformed_towel(random_seed: int = 2023, debug_visualizations
         current_frame += 1
         # check if all vertices' z coordinates are close enough to zero,
         # indicating that the cloth has fallen to the ground
-        if all([(ob.matrix_world @ v.co).z < 0.05 for v in ob.data.vertices]):
+
+        # have to get the evaluated vertices, otherwise the coordinates are not updated..
+        evaluated_vertices = ob.evaluated_get(bpy.context.evaluated_depsgraph_get()).data.vertices
+        if all([(ob.matrix_world @ v.co).z < 0.15 for v in evaluated_vertices]):
             logger.debug(f"cloth has fallen to the ground at frame {current_frame}")
             break
 
@@ -196,7 +199,7 @@ if __name__ == "__main__":
 
     from synthetic_cloth_data import DATA_DIR
 
-    id = 16
+    id = 17
     debug = True
     output_dir = DATA_DIR / "deformed_meshes" / "TOWEL"
     output_dir.mkdir(parents=True, exist_ok=True)
