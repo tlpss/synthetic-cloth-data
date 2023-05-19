@@ -10,6 +10,7 @@ from linen.blender.points import add_points
 from linen.folding.trajectories.circular_fold import circular_arc_position_trajectory
 from linen.path.path import Path
 from synthetic_cloth_data.meshes.cloth_meshes import attach_cloth_sim, generate_cloth_object, visualize_keypoints
+from synthetic_cloth_data.meshes.generate_flat_meshes import _unwrap_cloth_mesh
 from synthetic_cloth_data.meshes.mesh_operations import subdivide_mesh
 from synthetic_cloth_data.utils import CLOTH_TYPES
 
@@ -102,6 +103,8 @@ def generate_random_deformed_towel(random_seed: int = 2023, debug_visualizations
 
     # for idx in tqdm.trange(10):
     ob, kp = generate_cloth_object(CLOTH_TYPES.TOWEL)
+    #TODO: reuse existing meshes
+    _unwrap_cloth_mesh(ob)
     # attach_cloth_sim(ob)
     ob.location = np.array([idx % 10, idx // 10, 1.0])
     # update the object's world matrix
@@ -203,8 +206,9 @@ if __name__ == "__main__":
             filepath=os.path.join(output_dir, filename),
             use_selection=True,
             use_materials=False,
-            keep_vertex_order=True,
+            keep_vertex_order=True, # important for keypoints
             check_existing=False,
+            use_uvs=True, # save UV coordinates
         )
         print("keypoints")
         # write keypoints to json file
