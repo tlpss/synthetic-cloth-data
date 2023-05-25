@@ -1,24 +1,31 @@
+"""
+Script to download the google scanned objects dataset.
+
+Usage:
+from the desired directory, run this script.
+
+this will download all the models from the collection to the current directory and unzip them
+this takes about 10GB of space.
+"""
+
 # This script was download from:
 # https://app.gazebosim.org/GoogleResearch/fuel/collections/Scanned%20Objects%20by%20Google%20Research
-# To download the google scanned objects:
-# python3 download_collection.py -o "GoogleResearch" -c "Scanned Objects by Google Research"
-# Usage
-#     python3 download_collection.py -o <collection_owner> -c <collection_name>
-#
-# Description
-#     This script will download all models contained within a collection.
-#
+# and then modified
+
+
 import getopt
 import json
+import os
 import sys
+import zipfile
 
 import requests
 
 if sys.version_info[0] < 3:
     raise Exception("Python 3 or greater is required. Try running `python3 download_collection.py`")
 
-collection_name = ""
-owner_name = ""
+owner_name = "GoogleResearch"
+collection_name = "Scanned Objects by Google Research"
 
 # Read options
 optlist, args = getopt.getopt(sys.argv[1:], "o:c:")
@@ -83,5 +90,13 @@ while True:
         with open(model_name + ".zip", "wb") as fd:
             for chunk in download.iter_content(chunk_size=1024 * 1024):
                 fd.write(chunk)
+
+        # unzip the downloaded files
+        with zipfile.ZipFile(model_name + ".zip", "r") as zip_ref:
+            zip_ref.extractall(model_name)
+
+        # remove the zip file
+        os.remove(model_name + ".zip")
+
 
 print("Done.")
