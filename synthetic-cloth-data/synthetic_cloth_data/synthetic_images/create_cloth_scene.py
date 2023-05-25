@@ -155,7 +155,6 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
 
         bpy.context.view_layer.update()  # update the scene to propagate the new camera location & orientation
         camera_placed = _are_keypoints_in_camera_frustum(cloth_object, keypoint_vertices_dict, camera)
-        camera_placed = True
 
     return camera
 
@@ -264,7 +263,7 @@ class RendererConfig:
 
 
 class CyclesRendererConfig(RendererConfig):
-    num_samples: int = 64
+    num_samples: int = 32
 
 
 def render_scene(render_config: RendererConfig, output_dir: str):
