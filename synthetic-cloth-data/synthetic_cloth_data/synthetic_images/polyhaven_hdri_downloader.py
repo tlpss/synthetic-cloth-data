@@ -25,13 +25,12 @@ if __name__ == "__main__":
 
     for asset in tqdm.tqdm(assets):
         json_path = polyhaven_assets_path + "/" + asset + "/info.json"
-        try: 
+        try:
             info_dict = json.load(open(json_path, "r"))
-        except:
+        except FileNotFoundError:
             print(f"could not open json: {json_path}")
             continue
 
-    
         if info_dict["type"] != 0:  # HDRI
             continue
         if "indoor" not in info_dict["categories"]:
