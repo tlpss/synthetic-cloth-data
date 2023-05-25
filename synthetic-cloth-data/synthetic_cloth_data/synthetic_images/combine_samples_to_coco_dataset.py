@@ -65,5 +65,5 @@ def create_coco_dataset_from_intermediates(directory: str):
 if __name__ == "__main__":
     from synthetic_cloth_data import DATA_DIR
 
-    test_dir = DATA_DIR / "synthetic_images" / "test"
+    test_dir = DATA_DIR / "synthetic_images" / "deformed_test"
     create_coco_dataset_from_intermediates(test_dir)
