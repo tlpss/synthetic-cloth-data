@@ -8,10 +8,10 @@ CLOTH_TYPE_TO_COCO_CATEGORY_ID = {
     CLOTH_TYPES.TSHIRT.name: 2,
 }
 TOWEL_KEYPOINTS = [
-    "corner_0",
-    "corner_1",
-    "corner_2",
-    "corner_3",
+    "corner0",
+    "corner1",
+    "corner2",
+    "corner3",
 ]
 
 SHORT_KEYPOINTS = [

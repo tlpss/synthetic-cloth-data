@@ -6,6 +6,10 @@ setuptools.setup(
     author="Thomas Lips",
     author_email="thomas.lips@ugent.be",
     description="TODO",
-    install_requires=["numpy", "airo-blender"],
+    install_requires=[
+        "numpy",
+        "airo-blender",
+        "loguru"
+        ],
     packages=["synthetic_cloth_data"],
 )
