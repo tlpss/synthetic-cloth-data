@@ -25,12 +25,13 @@ class ClothSceneConfig:
     camera_config: CameraConfig
     hdri_config: HDRIConfig
     surface_config: SurfaceConfig
+    distractor_config: DistractorConfig
 
 
 def create_cloth_scene(config: ClothSceneConfig):
     bpy.ops.object.delete()
     add_hdri_background(config.hdri_config)
-    create_surface(config.surface_config)
+    surface = create_surface(config.surface_config)
     cloth_object, keypoint_vertex_ids = load_cloth_mesh(config.cloth_mesh_config)
     cloth_object.pass_index = 1  # mark for segmentation mask rendering
     add_camera(config.camera_config, cloth_object, keypoint_vertex_ids)
@@ -38,6 +39,7 @@ def create_cloth_scene(config: ClothSceneConfig):
     add_material_to_cloth_mesh(
         cloth_object=cloth_object, cloth_type=config.cloth_type, config=config.cloth_material_config
     )
+    add_distractors(config.distractor_config, cloth_object, surface)
     return cloth_object, keypoint_vertex_ids
 
 
@@ -108,8 +110,8 @@ def create_surface(config: SurfaceConfig) -> bpy.types.Object:
 class CameraConfig:
     # intrinsics
     focal_length: int = 20  # ZED2i focal length
-    horizontal_resolution: int = 512
-    vertical_resolution: int = 288  # 16:9 aspect ratio
+    horizontal_resolution: int = 512 // 2
+    vertical_resolution: int = 288 // 2  # 16:9 aspect ratio
     horizontal_sensor_size = 38  # ZED2i horizontal sensor size
 
     # extrinsics
@@ -253,6 +255,70 @@ def load_cloth_mesh(config: ClothMeshConfig):
     # convention is to have the keypoint vertex ids in a json file with the same name as the obj file
     keypoint_vertex_dict = json.load(open(str(mesh_file).replace(".obj", ".json")))
     return cloth_object, keypoint_vertex_dict
+
+
+@dataclasses.dataclass
+class DistractorConfig:
+    max_distractors: int = 2
+    distractor_list: List[dict] = dataclasses.field(default_factory=list)
+
+
+def add_distractors(
+    distractor_config: DistractorConfig, cloth_object: bpy.types.Object, surface_object: bpy.types.Object
+):
+
+    plane_x_size, plane_y_size = surface_object.dimensions[0], surface_object.dimensions[1]
+    plane_x_min, plane_x_max = (
+        surface_object.location[0] - plane_x_size / 2,
+        surface_object.location[0] + plane_x_size / 2,
+    )
+    plane_y_min, plane_y_max = (
+        surface_object.location[1] - plane_y_size / 2,
+        surface_object.location[1] + plane_y_size / 2,
+    )
+
+    cloth_bbox = cloth_object.bound_box
+    cloth_bbox = [cloth_object.matrix_world @ Vector(corner) for corner in cloth_bbox]
+    cloth_x_min = min([corner[0] for corner in cloth_bbox])
+    cloth_x_max = max([corner[0] for corner in cloth_bbox])
+    cloth_y_min = min([corner[1] for corner in cloth_bbox])
+    cloth_y_max = max([corner[1] for corner in cloth_bbox])
+
+    border_delta = 0.05
+
+    n_distractors = np.random.randint(0, distractor_config.max_distractors + 1)
+    distractor_objects = []
+    for _ in range(n_distractors):
+        distractor = np.random.choice(distractor_config.distractor_list)
+        distractor = ab.load_asset(**dict(distractor))
+        distractor_objects.append(distractor)
+        assert isinstance(distractor, bpy.types.Object)
+        # add object to scene
+        bpy.context.scene.collection.objects.link(distractor)
+
+        # simplest distractor placement
+        # # in theory, we should check if the distractor is inside the surface
+        # and if there are no collisions between the distractors
+
+        # we only check with the axis-aligned bounding box of the cloth for simplicity.
+        # assuming this does not matter too much for the representation learning task
+
+        for _ in range(10):
+            x = np.random.uniform(plane_x_min + border_delta, plane_x_max - border_delta)
+            y = np.random.uniform(plane_y_min + border_delta, plane_y_max - border_delta)
+            z = 0.001  # make sure the distractor is above the surface
+
+            # check if the distractor is inside the cloth
+            if x > cloth_x_min and x < cloth_x_max and y > cloth_y_min and y < cloth_y_max:
+                continue
+            else:
+                break
+
+        distractor.location[0] = x
+        distractor.location[1] = y
+        distractor.location[2] = z
+
+    return distractor_objects
 
 
 @dataclasses.dataclass
@@ -442,9 +508,13 @@ if __name__ == "__main__":
     import sys
 
     from synthetic_cloth_data import DATA_DIR
-    from synthetic_cloth_data.synthetic_images.assets.make_assets_snapshots import POLYHAVEN_ASSETS_SNAPSHOT_PATH
+    from synthetic_cloth_data.synthetic_images.assets.make_assets_snapshots import (
+        GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_PATH,
+        POLYHAVEN_ASSETS_SNAPSHOT_PATH,
+    )
 
     hdri_path = POLYHAVEN_ASSETS_SNAPSHOT_PATH
+    distractor_path = GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_PATH
     cloth_mesh_path = DATA_DIR / "deformed_meshes" / "TOWEL"
     dataset_dir = DATA_DIR / "synthetic_images" / "deformed_test"
     cloth_type = CLOTH_TYPES.TOWEL
@@ -470,6 +540,10 @@ if __name__ == "__main__":
     cloth_meshes = [cloth_mesh_path / mesh for mesh in cloth_meshes]
     cloth_meshes = [mesh for mesh in cloth_meshes if mesh.suffix == ".obj"]
 
+    # distractor assets
+    with open(distractor_path, "r") as file:
+        distractor_assets = json.load(file)["assets"]
+
     config = ClothSceneConfig(
         cloth_type=cloth_type,
         cloth_mesh_config=ClothMeshConfig(
@@ -479,6 +553,7 @@ if __name__ == "__main__":
         cloth_material_config=TowelMaterialConfig(),  # TODO: must be adapted to cloth type. -> Config.
         camera_config=CameraConfig(),
         surface_config=SurfaceConfig(materials_list=materials),
+        distractor_config=DistractorConfig(distractor_list=distractor_assets),
     )
     render_config = CyclesRendererConfig()
 
