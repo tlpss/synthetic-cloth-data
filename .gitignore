@@ -9,3 +9,6 @@
 ***__pycache__/
 **.pytest_cache/
 synthetic-cloth-data/data/
+**.log
+**/coco.json
+

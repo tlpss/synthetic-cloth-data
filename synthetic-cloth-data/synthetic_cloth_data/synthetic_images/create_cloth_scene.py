@@ -442,7 +442,7 @@ if __name__ == "__main__":
     import sys
 
     from synthetic_cloth_data import DATA_DIR
-    from synthetic_cloth_data.synthetic_images.make_polyhaven_assets_snapshot import POLYHAVEN_ASSETS_SNAPSHOT_PATH
+    from synthetic_cloth_data.synthetic_images.assets.make_assets_snapshots import POLYHAVEN_ASSETS_SNAPSHOT_PATH
 
     hdri_path = POLYHAVEN_ASSETS_SNAPSHOT_PATH
     cloth_mesh_path = DATA_DIR / "deformed_meshes" / "TOWEL"

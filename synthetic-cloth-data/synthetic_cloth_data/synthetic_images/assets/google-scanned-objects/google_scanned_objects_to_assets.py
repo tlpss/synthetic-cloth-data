@@ -131,8 +131,9 @@ if __name__ == "__main__":
     gso_directory = ""
     if "--" in sys.argv:
         argv = sys.argv[sys.argv.index("--") + 1 :]
-        gso_directory = int(argv[argv.index("--path") + 1])
+        gso_directory = argv[argv.index("--path") + 1]
 
+    print(gso_directory)
     if not gso_directory:
         print("Please pass the path to the GSO models as an argument")
         exit()
