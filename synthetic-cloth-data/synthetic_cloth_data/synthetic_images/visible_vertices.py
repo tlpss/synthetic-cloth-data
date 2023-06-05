@@ -1,27 +1,6 @@
-# taken from old airo-blender-toolkit
-# https://github.com/airo-ugent/airo-blender-toolkit/blob/main/airo_blender_toolkit/visible_vertices.py
-
+""" code to check if blender objects, vertices are occluded in a camera view"""
 import bpy
 from mathutils import Vector
-from mathutils.geometry import intersect_ray_tri
-
-
-def intersect_ray_quad_3d(quad, origin, destination):
-    ray = Vector(destination) - Vector(origin)
-    p = intersect_ray_tri(quad[0], quad[1], quad[2], ray, origin)
-    if p is None:
-        p = intersect_ray_tri(quad[2], quad[3], quad[0], ray, origin)
-    return p
-
-
-def intersect_ray_scene(scene, origin, destination):
-    direction = destination - origin
-    result, _, _, _, object, _ = scene.ray_cast(
-        bpy.context.view_layer.depsgraph,
-        origin=origin + direction * 0.0001,
-        direction=destination,
-    )
-    return result
 
 
 def is_vertex_occluded_for_scene_camera(co: Vector) -> bool:
@@ -38,29 +17,76 @@ def is_vertex_occluded_for_scene_camera(co: Vector) -> bool:
     bpy.context.view_layer.update()  # ensures camera matrix is up to date
     scene = bpy.context.scene
     camera_obj = scene.camera  # bpy.types.Object
-    camera = bpy.data.cameras[camera_obj.name]  # bpy.types.Camera
 
-    view_frame = [camera_obj.matrix_world @ v for v in camera.view_frame(scene=scene)]
-    view_center = sum(view_frame, Vector((0, 0, 0))) / len(view_frame)
-    view_normal = (view_center - camera_obj.location).normalized()
+    # add small cube around coord to make sure the ray will intersect
+    # as the ray_cast is not always accurate
+    # cf https://blender.stackexchange.com/a/87755
+    scale = 0.00001
+    bpy.ops.mesh.primitive_cube_add(location=co, scale=(scale, scale, scale))
+    cube = bpy.context.object
+    direction = co - camera_obj.location
+    hit, location, _, _, _, _ = scene.ray_cast(
+        bpy.context.view_layer.depsgraph,
+        origin=camera_obj.location + direction * 0.0001,  # avoid self intersection
+        direction=direction,
+    )
 
-    d = None
-    intersection = intersect_ray_quad_3d(
-        view_frame, co, camera_obj.location
-    )  # check intersection with the camera frame
+    # remove the auxiliary cube
+    bpy.data.objects.remove(cube, do_unlink=True)
 
-    if intersection is not None:
-        d = intersection - co
-        # only take into account vertices in front of the camera, not behind it.
-        if d.dot(view_normal) < 0:
-            d = d.length
-            # check intersection with all other objects in scene. We revert the direction,
-            # ie. look from the camera to avoid self intersection
-            if intersect_ray_scene(scene, co, camera_obj.location):
-                d = None
+    if not hit:
+        raise ValueError("No hit found, this should not happen as the ray should always hit the vertex itself.")
+    # if the hit is the vertex itself, it is not occluded
+    if (location - co).length < scale * 2:
+        return False
+    return True
+
+
+def is_object_occluded_for_scene_camera(obj: bpy.types.Object) -> bool:
+    """Checks if all vertices of an object are occluded by objects in the scene w.r.t. the camera.
+
+    Args:
+        obj (bpy.types.Object): the object.
+
+    Returns:
+        boolean: visibility
+    """
+    for vertex in obj.data.vertices:
+        coords = obj.matrix_world @ vertex.co
+        print(f"checking coords {coords}")
+        if not is_vertex_occluded_for_scene_camera(coords):
+            print("not occluded")
+            return False
+    return True
+
+
+if __name__ == "__main__":
+    """quick test for the object visibility code."""
+    import airo_blender as ab
+    import numpy as np
+
+    camera = bpy.data.objects["Camera"]
+    camera.location = (-10, 0, 0)
+    camera.rotation_euler = (np.pi / 2, 0, -np.pi / 2)
+
+    # add 100 random spheres to scene
+    objects = []
+    for i in range(100):
+        scale = 0.1
+
+        z, y = np.random.random(2)
+        z, y = z * 10 - 5, y * 10 - 5
+        bpy.ops.mesh.primitive_cube_add(location=(10, y, z), scale=(scale, scale, scale))
+        cube_obj = bpy.context.active_object
+        objects.append(cube_obj)
+
+    bpy.ops.mesh.primitive_cube_add(location=(10, 0, 1.1), scale=(0.1, 0.1, 0.1))
+    cube_obj = bpy.context.active_object
+    objects.append(cube_obj)
+
+    for obj in objects:
+        occluded = is_object_occluded_for_scene_camera(obj)
+        if occluded:
+            ab.add_material(obj, (1, 0, 0))
         else:
-            d = None
-
-    visible = d is not None and d > 0.0
-    occluded = not visible
-    return occluded
+            ab.add_material(obj, (0, 1, 0))
