@@ -1,5 +1,6 @@
 """ code to check if blender objects, vertices are occluded in a camera view"""
 import bpy
+from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
 
 
@@ -53,11 +54,22 @@ def is_object_occluded_for_scene_camera(obj: bpy.types.Object) -> bool:
     """
     for vertex in obj.data.vertices:
         coords = obj.matrix_world @ vertex.co
-        print(f"checking coords {coords}")
         if not is_vertex_occluded_for_scene_camera(coords):
-            print("not occluded")
             return False
     return True
+
+
+def is_point_in_camera_frustum(point: Vector, camera: bpy.types.Object) -> bool:
+    """Check if a point is in the camera frustum."""
+    # Project the point
+    scene = bpy.context.scene
+    projected_point = world_to_camera_view(scene, camera, point)
+    # Check if the point is in the frustum
+    return (
+        0 <= projected_point[0] <= 1
+        and 0 <= projected_point[1] <= 1
+        and camera.data.clip_start <= projected_point[2] <= camera.data.clip_end
+    )
 
 
 if __name__ == "__main__":
