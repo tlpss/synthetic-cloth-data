@@ -8,12 +8,12 @@ from synthetic_cloth_data.synthetic_images.scene_builder.utils.visible_vertices 
 
 @dataclasses.dataclass
 class CameraConfig:
-    # intrinsics
-    focal_length: int = 20  # ZED2i focal length
-    horizontal_resolution: int = 512 // 2
-    vertical_resolution: int = 288 // 2  # 16:9 aspect ratio
-    horizontal_sensor_size = 38  # ZED2i horizontal sensor size
-
+    # intrinsics are for a ZED2i camera
+    # based on https://support.stereolabs.com/hc/en-us/articles/360007395634-What-is-the-camera-focal-length-and-field-of-view-
+    horizontal_fov: int = 100  # ZED2i horizontal FOV approx
+    horizontal_resolution: int = 512  # rounded to multiple of 256 for MaxViT?
+    vertical_resolution: int = 288  # 16:9 aspect ratio
+    horizontal_sensor_size: int = 8.67  # 1/3 inch sensor
     # extrinsics
     minimal_camera_height: float = 0.7
     max_sphere_radius: float = 1.8
@@ -24,11 +24,14 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
 
     # Set the camera intrinsics
     # cf https://docs.blender.org/manual/en/latest/render/cameras.html for more info.
-    camera.data.lens = config.focal_length
+
+    # does not really matter as long as FOV is used instead of focal length.
     camera.data.sensor_width = config.horizontal_sensor_size
+
     camera.data.sensor_fit = "HORIZONTAL"
     camera.data.type = "PERSP"
-
+    camera.data.angle = np.pi / 180 * config.horizontal_fov
+    camera.data.lens_unit = "FOV"
     image_width, image_height = config.horizontal_resolution, config.vertical_resolution
     scene = bpy.context.scene
     scene.render.resolution_x = image_width
@@ -47,9 +50,9 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
 
     camera_placed = False
     while not camera_placed:
-        camera.location = _sample_point_on_unit_sphere(z_min=config.minimal_camera_height) * np.random.uniform(
-            1, config.max_sphere_radius
-        )
+        camera.location = _sample_point_on_unit_sphere(
+            z_min=config.minimal_camera_height / config.max_sphere_radius
+        ) * np.random.uniform(1, config.max_sphere_radius)
         # Make the camera look at tthe origin, around which the cloth and table are assumed to be centered.
         camera_direction = -camera.location
         camera_direction = Vector(camera_direction)
