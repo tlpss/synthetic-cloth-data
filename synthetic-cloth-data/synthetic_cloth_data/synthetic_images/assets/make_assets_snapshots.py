@@ -32,4 +32,6 @@ if __name__ == "__main__":
     print(f"Found {len(gso_assets)} google scanned objects assets")
     create_asset_json(gso_assets, GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_PATH)
 
+    # TODO: create snapshot with limited # of assets for dev purposes (limited storage on laptop)
+
     print("Done!")
