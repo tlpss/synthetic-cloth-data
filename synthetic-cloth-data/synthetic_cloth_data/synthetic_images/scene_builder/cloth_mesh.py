@@ -8,6 +8,7 @@ from typing import List
 
 import bpy
 import numpy as np
+from synthetic_cloth_data import DATA_DIR
 
 
 @dataclasses.dataclass
@@ -17,7 +18,7 @@ class ClothMeshConfig:
     mesh_dir: List[str] = dataclasses.field(init=False)
 
     def __post_init__(self):
-        mesh_path = pathlib.Path(self.mesh_path)
+        mesh_path = DATA_DIR / pathlib.Path(self.mesh_path)
         cloth_meshes = os.listdir(mesh_path)
         cloth_meshes = [self.mesh_path / mesh for mesh in cloth_meshes]
         cloth_meshes = [mesh for mesh in cloth_meshes if mesh.suffix == ".obj"]

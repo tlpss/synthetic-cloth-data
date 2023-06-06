@@ -1,4 +1,5 @@
-"""script to create asset snapshots (json files with metadata about the assets). These are used to sample assets for the synthetic images.
+"""script to create asset snapshots (json files with metadata about the assets). These are used to sample assets for the synthetic images in a reproducible way
+(needed since assets can be added or removed online, especially on Polyhaven).
 
 Usage:
 blender -P -b <path_to_this_file>

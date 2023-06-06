@@ -5,7 +5,7 @@ import bpy
 import numpy as np
 from mathutils import Vector
 from synthetic_cloth_data.synthetic_images.assets.asset_snapshot_paths import (
-    GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_PATH,
+    GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_RELATIVE_PATH,
 )
 from synthetic_cloth_data.synthetic_images.scene_builder.utils.assets import AssetConfig
 
@@ -13,7 +13,7 @@ from synthetic_cloth_data.synthetic_images.scene_builder.utils.assets import Ass
 @dataclasses.dataclass
 class DistractorConfig(AssetConfig):
     max_distractors: int = 2
-    asset_json_path: str = GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_PATH
+    asset_json_relative_path: str = GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_RELATIVE_PATH
 
 
 def add_distractors_to_scene(

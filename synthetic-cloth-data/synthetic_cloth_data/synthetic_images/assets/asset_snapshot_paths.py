@@ -1,6 +1,10 @@
 import pathlib
 
-GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_PATH = (
-    pathlib.Path(__file__).parent / "google-scanned-objects" / "gso_assets_snapshot.json"
-)
-POLYHAVEN_ASSETS_SNAPSHOT_PATH = pathlib.Path(__file__).parent / "polyhaven" / "polyhaven_assets_snapshot.json"
+ASSETS_CODE_PATH = pathlib.Path(__file__).parent
+
+GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_RELATIVE_PATH = pathlib.Path("google-scanned-objects/gso_assets_snapshot.json")
+POLYHAVEN_ASSETS_SNAPSHOT_RELATIVE_PATH = pathlib.Path("polyhaven/polyhaven_assets_snapshot.json")
+
+
+GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_PATH = ASSETS_CODE_PATH / GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_RELATIVE_PATH
+POLYHAVEN_ASSETS_SNAPSHOT_PATH = ASSETS_CODE_PATH / POLYHAVEN_ASSETS_SNAPSHOT_RELATIVE_PATH

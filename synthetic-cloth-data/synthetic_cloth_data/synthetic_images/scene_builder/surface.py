@@ -4,14 +4,14 @@ from typing import List, Tuple
 import airo_blender as ab
 import bpy
 import numpy as np
-from synthetic_cloth_data.synthetic_images.assets.asset_snapshot_paths import POLYHAVEN_ASSETS_SNAPSHOT_PATH
+from synthetic_cloth_data.synthetic_images.assets.asset_snapshot_paths import POLYHAVEN_ASSETS_SNAPSHOT_RELATIVE_PATH
 from synthetic_cloth_data.synthetic_images.scene_builder.utils.assets import AssetConfig
 from synthetic_cloth_data.synthetic_images.scene_builder.utils.colors import hsv_to_rgb, sample_hsv_color
 
 
 @dataclasses.dataclass
 class PolyhavenMaterials(AssetConfig):
-    asset_json_path: str = POLYHAVEN_ASSETS_SNAPSHOT_PATH
+    asset_json_relative_path: str = POLYHAVEN_ASSETS_SNAPSHOT_RELATIVE_PATH
     types: List[str] = dataclasses.field(default_factory=lambda: ["materials"])
 
 

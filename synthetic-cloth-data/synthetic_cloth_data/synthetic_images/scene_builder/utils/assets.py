@@ -2,6 +2,8 @@ import dataclasses
 import json
 from typing import List, Optional
 
+from synthetic_cloth_data.synthetic_images.assets.asset_snapshot_paths import ASSETS_CODE_PATH
+
 
 @dataclasses.dataclass
 class AssetConfig:
@@ -9,14 +11,14 @@ class AssetConfig:
 
     """base class for Blender asset configs that load a set of assets from a json snapshot file."""
     asset_list: List[dict] = dataclasses.field(init=False)
-    asset_json_path: str = None
+    asset_json_relative_path: str = None  # path relative to synthetic_images/assets
 
     tags: Optional[List[str]] = None
     types: Optional[List[str]] = None  # TODO: validate these against the possible blender asset types
     max_amount: Optional[int] = None
 
     def __post_init__(self):
-        self.asset_list = json.load(open(self.asset_json_path, "r"))["assets"]
+        self.asset_list = json.load(open(ASSETS_CODE_PATH / self.asset_json_relative_path, "r"))["assets"]
         self.asset_list = self._filter_assets(self.asset_list)
 
     def _filter_assets(self, asset_list: List[dict]):
