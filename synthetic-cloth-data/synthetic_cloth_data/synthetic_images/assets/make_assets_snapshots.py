@@ -25,7 +25,11 @@ if __name__ == "__main__":
     all_assets = ab.available_assets()
 
     polyhaven_assets = [asset for asset in all_assets if asset["library"] == "Poly Haven"]
+    print(f"Found {len(polyhaven_assets)} polyhaven assets")
     create_asset_json(polyhaven_assets, POLYHAVEN_ASSETS_SNAPSHOT_PATH)
 
     gso_assets = [asset for asset in all_assets if asset["library"] == "Google Scanned Objects"]
+    print(f"Found {len(gso_assets)} google scanned objects assets")
     create_asset_json(gso_assets, GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_PATH)
+
+    print("Done!")
