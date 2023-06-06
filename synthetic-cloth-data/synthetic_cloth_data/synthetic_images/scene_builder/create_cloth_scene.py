@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import json
 
 import bpy
 import numpy as np
@@ -36,6 +35,7 @@ class ClothSceneConfig:
     hdri_config: HDRIConfig
     surface_config: SurfaceConfig
     distractor_config: DistractorConfig
+    coco_id: int = 0
 
 
 def create_cloth_scene(config: ClothSceneConfig):
@@ -65,10 +65,6 @@ if __name__ == "__main__":
     import sys
 
     from synthetic_cloth_data import DATA_DIR
-    from synthetic_cloth_data.synthetic_images.assets.make_assets_snapshots import (
-        GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_PATH,
-        POLYHAVEN_ASSETS_SNAPSHOT_PATH,
-    )
 
     id = 7
     # check if id was passed as argument
@@ -77,8 +73,6 @@ if __name__ == "__main__":
         id = int(argv[argv.index("--id") + 1])
 
     # FIX THIS PART WITH HYDRA CONFIG.
-    hdri_path = POLYHAVEN_ASSETS_SNAPSHOT_PATH
-    distractor_path = GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_PATH
     cloth_mesh_path = DATA_DIR / "deformed_meshes" / "TOWEL"
     dataset_dir = DATA_DIR / "synthetic_images" / "deformed_test"
     cloth_type = CLOTH_TYPES.TOWEL
@@ -86,32 +80,14 @@ if __name__ == "__main__":
     output_dir = os.path.join(dataset_dir, f"{id:06d}")
     np.random.seed(2023 + id)
 
-    # load HDRIS
-    with open(hdri_path, "r") as file:
-        assets = json.load(file)["assets"]
-    worlds = [asset for asset in assets if asset["type"] == "worlds" and "indoor" in asset["tags"]]
-    materials = [asset for asset in assets if asset["type"] == "materials"]
-
-    # load cloth meshes
-
-    cloth_meshes = os.listdir(cloth_mesh_path)
-    cloth_meshes = [cloth_mesh_path / mesh for mesh in cloth_meshes]
-    cloth_meshes = [mesh for mesh in cloth_meshes if mesh.suffix == ".obj"]
-
-    # distractor assets
-    with open(distractor_path, "r") as file:
-        distractor_assets = json.load(file)["assets"]
-
     config = ClothSceneConfig(
         cloth_type=cloth_type,
-        cloth_mesh_config=ClothMeshConfig(
-            mesh_dir=cloth_meshes,
-        ),
-        hdri_config=HDRIConfig(polyhaven_hdri_asset_list=worlds),
+        cloth_mesh_config=ClothMeshConfig(mesh_path=cloth_mesh_path),
+        hdri_config=HDRIConfig(),
         cloth_material_config=TowelMaterialConfig(),  # TODO: must be adapted to cloth type. -> Config.
         camera_config=CameraConfig(),
-        surface_config=SurfaceConfig(materials_list=materials),
-        distractor_config=DistractorConfig(distractor_list=distractor_assets),
+        surface_config=SurfaceConfig(),
+        distractor_config=DistractorConfig(),
     )
     render_config = CyclesRendererConfig()
 

@@ -1,16 +1,19 @@
 import dataclasses
-from typing import List
 
 import airo_blender as ab
 import bpy
 import numpy as np
 from mathutils import Vector
+from synthetic_cloth_data.synthetic_images.assets.asset_snapshot_paths import (
+    GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_PATH,
+)
+from synthetic_cloth_data.synthetic_images.scene_builder.utils.assets import AssetConfig
 
 
 @dataclasses.dataclass
-class DistractorConfig:
+class DistractorConfig(AssetConfig):
     max_distractors: int = 2
-    distractor_list: List[dict] = dataclasses.field(default_factory=list)
+    asset_json_path: str = GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_PATH
 
 
 def add_distractors_to_scene(
@@ -41,7 +44,7 @@ def add_distractors_to_scene(
     n_distractors = np.random.randint(0, distractor_config.max_distractors + 1)
     distractor_objects = []
     for _ in range(n_distractors):
-        distractor = np.random.choice(distractor_config.distractor_list)
+        distractor = np.random.choice(distractor_config.asset_list)
         distractor = ab.load_asset(**dict(distractor))
         distractor_objects.append(distractor)
         assert isinstance(distractor, bpy.types.Object)

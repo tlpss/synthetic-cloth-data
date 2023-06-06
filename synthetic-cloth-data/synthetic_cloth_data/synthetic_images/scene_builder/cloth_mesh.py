@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import os
+import pathlib
 from typing import List
 
 import bpy
@@ -10,8 +12,16 @@ import numpy as np
 
 @dataclasses.dataclass
 class ClothMeshConfig:
-    mesh_dir: List[str]
+    mesh_path: str
     xy_randomization_range: float = 0.1
+    mesh_dir: List[str] = dataclasses.field(init=False)
+
+    def __post_init__(self):
+        mesh_path = pathlib.Path(self.mesh_path)
+        cloth_meshes = os.listdir(mesh_path)
+        cloth_meshes = [self.mesh_path / mesh for mesh in cloth_meshes]
+        cloth_meshes = [mesh for mesh in cloth_meshes if mesh.suffix == ".obj"]
+        self.mesh_dir = cloth_meshes
 
 
 def load_cloth_mesh(config: ClothMeshConfig):
