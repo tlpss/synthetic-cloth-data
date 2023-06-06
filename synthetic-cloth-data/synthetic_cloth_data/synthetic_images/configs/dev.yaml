@@ -1,0 +1,9 @@
+defaults:
+  - _self_
+  - camera: default.yaml
+
+
+cloth_type: 'TOWEL'
+id: 5
+relative_mesh_path: 'deformed_meshes/towel'
+relative_dataset_path: 'synthetic_images/test'

@@ -1,0 +1,3 @@
+_target_: synthetic_cloth_data.synthetic_images.scene_builder.camera.CameraConfig
+
+focal_length: 30

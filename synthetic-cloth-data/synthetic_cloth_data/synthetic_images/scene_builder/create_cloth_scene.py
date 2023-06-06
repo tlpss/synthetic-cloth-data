@@ -35,7 +35,9 @@ class ClothSceneConfig:
     hdri_config: HDRIConfig
     surface_config: SurfaceConfig
     distractor_config: DistractorConfig
-    coco_id: int = 0
+    renderer_config: RendererConfig
+    coco_id: int
+    relative_dataset_dir: str
 
 
 def create_cloth_scene(config: ClothSceneConfig):
@@ -54,41 +56,61 @@ def create_cloth_scene(config: ClothSceneConfig):
     return cloth_object, keypoint_vertex_ids
 
 
-def create_sample(scene_config: ClothSceneConfig, render_config: RendererConfig, output_dir: str, coco_id: int):
+def create_sample(scene_config: ClothSceneConfig):
+
+    output_dir = os.path.join(dataset_dir, f"{scene_config.coco_id:06d}")
+    np.random.seed(2023 + scene_config.coco_id)
+
     cloth_object, keypoint_vertex_dict = create_cloth_scene(scene_config)
-    render_scene(render_config, output_dir)
-    create_coco_annotations(scene_config.cloth_type, output_dir, coco_id, cloth_object, keypoint_vertex_dict)
+    render_scene(scene_config.renderer_config, output_dir)
+    create_coco_annotations(
+        scene_config.cloth_type, output_dir, scene_config.coco_id, cloth_object, keypoint_vertex_dict
+    )
 
 
 if __name__ == "__main__":
+    import argparse
     import os
     import sys
 
+    import hydra
+    from omegaconf import OmegaConf
     from synthetic_cloth_data import DATA_DIR
 
-    id = 7
-    # check if id was passed as argument
+    # parse arguments in blender compatible way by using -- as separator
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--hydra_config", type=str, default="dev")
+    parser.add_argument("--hydra", nargs="*", default=[])
     if "--" in sys.argv:
-        argv = sys.argv[sys.argv.index("--") + 1 :]
-        id = int(argv[argv.index("--id") + 1])
+        args = parser.parse_args(sys.argv[sys.argv.index("--") + 1 :])
+    else:
+        args = parser.parse_args([])
+    config_name = args.hydra_config
+    argv = args.hydra
+
+    # initialize hydra
+    hydra.initialize(config_path="../configs", job_name="create_cloth_scene")
+    cfg = hydra.compose(config_name=config_name, overrides=argv)
+    print(f"hydra config: \n{OmegaConf.to_yaml(cfg)}")
 
     # FIX THIS PART WITH HYDRA CONFIG.
     cloth_mesh_path = DATA_DIR / "deformed_meshes" / "TOWEL"
     dataset_dir = DATA_DIR / "synthetic_images" / "deformed_test"
-    cloth_type = CLOTH_TYPES.TOWEL
 
-    output_dir = os.path.join(dataset_dir, f"{id:06d}")
-    np.random.seed(2023 + id)
-
+    camera_config = hydra.utils.instantiate(cfg["camera"])
+    print(camera_config)
     config = ClothSceneConfig(
-        cloth_type=cloth_type,
-        cloth_mesh_config=ClothMeshConfig(mesh_path=cloth_mesh_path),
+        cloth_type=CLOTH_TYPES[cfg["cloth_type"]],
+        cloth_mesh_config=ClothMeshConfig(mesh_path=DATA_DIR / cfg["relative_mesh_path"]),
         hdri_config=HDRIConfig(),
         cloth_material_config=TowelMaterialConfig(),  # TODO: must be adapted to cloth type. -> Config.
-        camera_config=CameraConfig(),
+        camera_config=camera_config,
         surface_config=SurfaceConfig(),
         distractor_config=DistractorConfig(),
+        renderer_config=CyclesRendererConfig(),
+        coco_id=cfg["id"],
+        relative_dataset_dir=DATA_DIR / cfg["relative_dataset_path"],
     )
-    render_config = CyclesRendererConfig()
-
-    create_sample(config, render_config, output_dir, id)
+    # print(json.dumps(dataclasses.asdict(config), indent=4))
+    print(config)
+    create_sample(config)

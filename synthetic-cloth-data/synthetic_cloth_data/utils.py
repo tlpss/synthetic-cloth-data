@@ -1,6 +1,11 @@
 import enum
 
-CLOTH_TYPES = enum.Enum("CLOTH_TYPES", "TOWEL SHORTS TSHIRT")
+
+class CLOTH_TYPES(str, enum.Enum):
+    TOWEL = "TOWEL"
+    SHORTS = "SHORTS"
+    TSHIRT = "TSHIRT"
+
 
 CLOTH_TYPE_TO_COCO_CATEGORY_ID = {
     CLOTH_TYPES.TOWEL.name: 0,
