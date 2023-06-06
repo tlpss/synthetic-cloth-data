@@ -96,15 +96,12 @@ if __name__ == "__main__":
     # FIX THIS PART WITH HYDRA CONFIG.
     cloth_mesh_path = DATA_DIR / "deformed_meshes" / "TOWEL"
     dataset_dir = DATA_DIR / "synthetic_images" / "deformed_test"
-
-    camera_config = hydra.utils.instantiate(cfg["camera"])
-    print(camera_config)
     config = ClothSceneConfig(
         cloth_type=CLOTH_TYPES[cfg["cloth_type"]],
-        cloth_mesh_config=ClothMeshConfig(mesh_path=DATA_DIR / cfg["relative_mesh_path"]),
+        cloth_mesh_config=hydra.utils.instantiate(cfg["cloth_mesh"]),
         hdri_config=HDRIConfig(),
-        cloth_material_config=TowelMaterialConfig(),  # TODO: must be adapted to cloth type. -> Config.
-        camera_config=camera_config,
+        cloth_material_config=TowelMaterialConfig(),
+        camera_config=hydra.utils.instantiate(cfg["camera"]),
         surface_config=SurfaceConfig(),
         distractor_config=DistractorConfig(),
         renderer_config=CyclesRendererConfig(),
@@ -112,5 +109,5 @@ if __name__ == "__main__":
         relative_dataset_dir=DATA_DIR / cfg["relative_dataset_path"],
     )
     # print(json.dumps(dataclasses.asdict(config), indent=4))
-    print(config)
+    # print(config)
     create_sample(config)
