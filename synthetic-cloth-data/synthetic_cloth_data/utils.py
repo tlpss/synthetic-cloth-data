@@ -1,4 +1,6 @@
+import datetime
 import enum
+import subprocess
 
 
 class CLOTH_TYPES(str, enum.Enum):
@@ -43,3 +45,14 @@ TSHIRT_KEYPOINTS = [
     "sleeve_left_bottom",
     "sleeve_left_top",
 ]
+
+
+def get_git_revision_hash() -> str:
+    return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
+
+
+def get_metadata_dict_for_dataset() -> dict:
+    return {
+        "git hash": get_git_revision_hash(),
+        "date time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
