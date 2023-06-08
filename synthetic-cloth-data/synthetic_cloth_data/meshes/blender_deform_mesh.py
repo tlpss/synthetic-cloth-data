@@ -127,6 +127,7 @@ class DeformationConfig:
     max_arc_angle_rad: float = np.pi / 2
     max_num_falling_physics_steps: int = 150
     falling_termination_height: float = 0.05
+    max_mesh_xy_rotation_rad: float = np.pi / 6
 
 
 def generate_deformed_mesh(
@@ -140,17 +141,25 @@ def generate_deformed_mesh(
     subdivide_mesh(plane, 10)
     add_material(plane, (1, 0.5, 0.5, 1.0))
 
-    bpy.ops.import_scene.obj(filepath=flat_mesh_path)
+    bpy.ops.import_scene.obj(filepath=flat_mesh_path, split_mode="OFF")  # keep vertex order for keypoints!
     ob = bpy.context.selected_objects[0]
     ob.name = ob.name.split(".")[0] + "_blender_deformed"
     kp = json.load(open(flat_mesh_path.replace(".obj", ".json")))["keypoint_vertices"]
 
     _unwrap_cloth_mesh(ob)
     ob.location = np.array([0, 0, 1.0])
+
+    # randomize orientation, which has large impact on crumpling due to simulated air friction
+    # (and internal collisions of the cloth mesh)
+
+    # apply relative rotation, to not mess with the obj <-> scene import which already applies rotations
+    # to go from y-up to z-up coordinate system.
+    ob.rotation_euler[0] += np.random.uniform(0, deformation_config.max_mesh_xy_rotation_rad)
+    ob.rotation_euler[1] += np.random.uniform(0, deformation_config.max_mesh_xy_rotation_rad)
+    ob.rotation_euler[2] = np.random.uniform(0, 2 * np.pi)
+
     # update the object's world matrix
     # cf. https://blender.stackexchange.com/questions/27667/incorrect-matrix-world-after-transformation
-    x_rot, y_rot = np.random.uniform(0, np.pi / 2 * 0.2, 2)
-    ob.rotation_euler = np.array([x_rot, y_rot, 0])
     bpy.context.view_layer.update()
 
     keypoints = np.array([ob.matrix_world @ ob.data.vertices[kid].co for kid in kp.values()])
@@ -215,6 +224,8 @@ def generate_deformed_mesh(
         ):
             logger.debug(f"cloth has fallen to the ground at frame {current_frame}")
             break
+
+    logger.debug("max frames reached for cloth falling")
 
     scene.frame_end = current_frame
     bpy.context.view_layer.update()
