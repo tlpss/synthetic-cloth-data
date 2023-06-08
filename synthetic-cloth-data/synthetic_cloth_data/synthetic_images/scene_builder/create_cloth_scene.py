@@ -58,7 +58,7 @@ def create_cloth_scene(config: ClothSceneConfig):
 
 def create_sample(scene_config: ClothSceneConfig):
 
-    output_dir = os.path.join(dataset_dir, f"{scene_config.coco_id:06d}")
+    output_dir = os.path.join(scene_config.relative_dataset_dir, f"{scene_config.coco_id:06d}")
     np.random.seed(2023 + scene_config.coco_id)
 
     cloth_object, keypoint_vertex_dict = create_cloth_scene(scene_config)
@@ -94,8 +94,6 @@ if __name__ == "__main__":
     print(f"hydra config: \n{OmegaConf.to_yaml(cfg)}")
 
     # FIX THIS PART WITH HYDRA CONFIG.
-    cloth_mesh_path = DATA_DIR / "deformed_meshes" / "TOWEL"
-    dataset_dir = DATA_DIR / "synthetic_images" / "deformed_test"
     config = ClothSceneConfig(
         cloth_type=CLOTH_TYPES[cfg["cloth_type"]],
         cloth_mesh_config=hydra.utils.instantiate(cfg["cloth_mesh"]),

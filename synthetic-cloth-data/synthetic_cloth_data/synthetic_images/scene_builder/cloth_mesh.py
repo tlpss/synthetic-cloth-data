@@ -40,5 +40,5 @@ def load_cloth_mesh(config: ClothMeshConfig):
     cloth_object.rotation_euler[2] = np.random.rand() * 2 * np.pi
 
     # convention is to have the keypoint vertex ids in a json file with the same name as the obj file
-    keypoint_vertex_dict = json.load(open(str(mesh_file).replace(".obj", ".json")))
+    keypoint_vertex_dict = json.load(open(str(mesh_file).replace(".obj", ".json")))["keypoint_vertices"]
     return cloth_object, keypoint_vertex_dict

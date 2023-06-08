@@ -6,5 +6,4 @@ defaults:
 
 cloth_type: TOWEL
 id: 5
-relative_mesh_path: deformed_meshes/towel
-relative_dataset_path: synthetic_images/test
+relative_dataset_path: synthetic_images/dev
