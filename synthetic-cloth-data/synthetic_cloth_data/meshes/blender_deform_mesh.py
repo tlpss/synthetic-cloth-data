@@ -124,10 +124,10 @@ def animate_grasped_vertex(ob: bpy.types.Object, grasped_vertex_id: int, positio
 
 @dataclasses.dataclass
 class DeformationConfig:
-    max_arc_angle_rad: float = np.pi / 2
-    max_num_falling_physics_steps: int = 100
+    max_arc_angle_rad: float = np.pi / 3
+    max_num_falling_physics_steps: int = 80
     falling_termination_height: float = 0.05
-    max_mesh_xy_rotation_rad: float = np.pi / 6
+    max_mesh_xy_rotation_rad: float = np.pi / 9
 
 
 def generate_deformed_mesh(
