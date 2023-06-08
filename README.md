@@ -13,7 +13,10 @@ It contains
 - install & setup blender in airo-blender: from the `airo-blender/blender` folder, run `source ../bash_scripts/setup_blender.sh << path-to-your-conda-env`
 
 ## Generating Data
-#TODO
+- generate flat meshes : `blender -b -P meshes/generate_flat_meshes.py -- --cloth_type TOWEL --num_samples 4 --dataset_tag dev`
+- generate deformed meshes
+- generate synthetic images
+- create coco json file
 
 
 ## Development

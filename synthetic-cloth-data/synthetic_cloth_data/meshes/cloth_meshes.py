@@ -211,35 +211,6 @@ def generate_cloth_object(type: CLOTH_TYPES):
     return blender_object, keypoint_ids
 
 
-def attach_cloth_sim(blender_object, solifify=True):
-    bpy.ops.object.select_all(action="DESELECT")
-    bpy.context.view_layer.objects.active = blender_object
-    blender_object.select_set(True)
-    # add solidify modifier
-    if solifify:
-        bpy.ops.object.modifier_add(type="SOLIDIFY")
-        bpy.context.object.modifiers["Solidify"].thickness = np.random.uniform(0.001, 0.005)
-    bpy.ops.object.modifier_add(type="CLOTH")
-    # helps with smoothing of the mesh after deformation
-    bpy.ops.object.shade_smooth()
-
-    # physics
-    blender_object.modifiers["Cloth"].settings.quality = 5
-    blender_object.modifiers["Cloth"].settings.mass = np.random.uniform(0.1, 2.0)  # mass per vertex!
-    # air resistance - higher will result in more wrinkles during free fall. if zero, cloth falls 'rigidly'.
-    blender_object.modifiers["Cloth"].settings.air_damping = np.random.uniform(0.1, 3.0)
-    blender_object.modifiers["Cloth"].settings.tension_stiffness = np.random.uniform(2.0, 50.0)
-    blender_object.modifiers["Cloth"].settings.compression_stiffness = np.random.uniform(2.0, 50.0)
-    blender_object.modifiers["Cloth"].settings.shear_stiffness = np.random.uniform(2.0, 20.0)
-    blender_object.modifiers["Cloth"].settings.bending_stiffness = np.random.uniform(0.01, 50.0)
-    # collision
-    blender_object.modifiers["Cloth"].collision_settings.collision_quality = 2
-    blender_object.modifiers["Cloth"].collision_settings.use_self_collision = True
-    blender_object.modifiers["Cloth"].collision_settings.distance_min = 0.003
-    blender_object.modifiers["Cloth"].collision_settings.self_distance_min = 0.003
-    blender_object.modifiers["Cloth"].collision_settings.self_friction = np.random.uniform(0.1, 2.0)
-
-
 if __name__ == "__main__":
     from airo_blender.materials import add_material
 
