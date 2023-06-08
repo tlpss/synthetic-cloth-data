@@ -40,11 +40,14 @@ def get_voxel_ground_projected_area(voxel_object: trimesh.voxel.VoxelGrid):
     return np.sum(grid) * resolution**2
 
 
-def get_mesh_projected_xy_area_size(path: str):
+def get_mesh_projected_xy_area(path: str, pitch: float = 0.002):
+    """Get the projected area of a mesh in the XY plane, using a voxel-based grid to measure area of non-convex shapes.
+    pitch size is in meters, and determines the resolution of the voxel grid and hence also the discretization error of the area.
+    Trade off between accuracy and computation time."""
     mesh = trimesh.load(path)
     # blender stores meshes with Y-axis up, we use Z-axis up
     mesh.apply_transform(trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0]))
-    voxels = mesh.voxelized(pitch=0.001, max_iter=10000)
+    voxels = mesh.voxelized(pitch=pitch, max_iter=10000)
     return get_voxel_ground_projected_area(voxels)
 
 
@@ -52,5 +55,6 @@ if __name__ == "__main__":
     import pathlib
 
     filepath = pathlib.Path(__file__).parent
-    filepath = filepath / "plane.obj"
-    print(get_mesh_projected_xy_area_size(filepath))
+    filepath = filepath.parents[1] / "data" / "flat_meshes" / "TSHIRT" / "dev" / "000001.obj"
+    print(filepath)
+    print(get_mesh_projected_xy_area(filepath))

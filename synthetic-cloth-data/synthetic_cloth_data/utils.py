@@ -52,6 +52,7 @@ def get_git_revision_hash() -> str:
 
 
 def get_metadata_dict_for_dataset() -> dict:
+    """dict with git hash and datetime for use in metadata files"""
     return {
         "git hash": get_git_revision_hash(),
         "date time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

@@ -17,6 +17,7 @@ def visualize_meshes(mesh_dir: str, max_amount_to_visualize: int = 100):
     add_material(plane, (1, 0.5, 0.5, 1.0))
 
     meshes = list(pathlib.Path(mesh_dir).glob("*.obj"))
+    meshes = sorted(meshes, key=lambda x: int(x.stem))
     print(f"Found {len(meshes)} meshes in {mesh_dir}")
     n_meshes = min(len(meshes), max_amount_to_visualize)
     for idx in tqdm.trange(n_meshes):
@@ -27,12 +28,15 @@ def visualize_meshes(mesh_dir: str, max_amount_to_visualize: int = 100):
         # update the object's world matrix
         # cf. https://blender.stackexchange.com/questions/27667/incorrect-matrix-world-after-transformation
         bpy.context.view_layer.update()
-        keypoint_ids = json.load(open(str(meshes[idx]).replace(".obj", ".json")))
+        keypoint_ids = json.load(open(str(meshes[idx]).replace(".obj", ".json")))["keypoint_vertices"]
         visualize_keypoints(blender_obj, vertex_ids=[int(k) for k in keypoint_ids.values()])
 
 
 if __name__ == "__main__":
+    import sys
+
     from synthetic_cloth_data import DATA_DIR
 
-    mesh_dir = DATA_DIR / "deformed_meshes" / "TOWEL"
+    relative_dir = sys.argv[sys.argv.index("--dir") + 1]
+    mesh_dir = DATA_DIR / relative_dir
     visualize_meshes(mesh_dir, max_amount_to_visualize=100)
