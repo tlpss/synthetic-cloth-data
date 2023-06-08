@@ -84,6 +84,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cloth_type", type=str, default="TOWEL")
     parser.add_argument("--num_samples", type=int, default=100)
-    parser.add_argument("--dataset_tag", type=str, default="0")
+    parser.add_argument("--dataset_tag", type=str, default="dev")
     args = parser.parse_args(argv)
     generate_dataset(CLOTH_TYPES(args.cloth_type), args.num_samples, output_dir, args.dataset_tag)
