@@ -39,7 +39,8 @@ def load_cloth_mesh(config: ClothMeshConfig):
     # this is an artifact of the way the meshes were created using blender's cloth simulation
     # which has imperfect collisions with the table
     # but the check does not hurt in general
-    cloth_object.location[2] -= np.min([v.co[2] for v in cloth_object.data.vertices])
+    z_min = np.min([ (cloth_object.matrix_world @ v.co)[2] for v in cloth_object.data.vertices])
+    cloth_object.location[2] -= z_min
     # make sure the cloth is a little above the surface for rendering purposes
     cloth_object.location[2] += 0.0001
 
