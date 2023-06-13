@@ -7,63 +7,91 @@ from airo_dataset_tools.data_parsers.coco import (
     CocoKeypointCategory,
     CocoKeypointsDataset,
 )
-from synthetic_cloth_data.utils import SHORT_KEYPOINTS, TOWEL_KEYPOINTS, TSHIRT_KEYPOINTS
+from synthetic_cloth_data.utils import SHORT_KEYPOINTS, TOWEL_KEYPOINTS, TSHIRT_KEYPOINTS, CLOTH_TYPE_TO_COCO_CATEGORY_ID
+from synthetic_cloth_data import DATA_DIR
+import pathlib 
+import cv2
+from tqdm import tqdm
 
+towel_category = CocoKeypointCategory(
+    supercategory="cloth",
+    id=0,
+    name="towel",
+    keypoints=TOWEL_KEYPOINTS,
+    skeleton=[],
+)
+tshirt_category = CocoKeypointCategory(
+    supercategory="cloth",
+    id=2,
+    name="tshirt",
+    keypoints=TSHIRT_KEYPOINTS,
+)
+short_category = CocoKeypointCategory(
+    supercategory="cloth",
+    id=1,
+    name="short",
+    keypoints=SHORT_KEYPOINTS,
+)
 
-def create_coco_dataset_from_intermediates(directory: str):
-    towel_category = CocoKeypointCategory(
-        supercategory="cloth",
-        id=0,
-        name="towel",
-        keypoints=TOWEL_KEYPOINTS,
-        skeleton=[],
-    )
-    tshirt_category = CocoKeypointCategory(
-        supercategory="cloth",
-        id=1,
-        name="tshirt",
-        keypoints=TSHIRT_KEYPOINTS,
-    )
-    short_category = CocoKeypointCategory(
-        supercategory="cloth",
-        id=2,
-        name="short",
-        keypoints=SHORT_KEYPOINTS,
-    )
+def create_coco_dataset_from_intermediates(relative_target_directory, relative_source_directory: str):
 
     categories = [towel_category, tshirt_category, short_category]
     annotations = []
     images = []
 
-    data_samples = os.listdir(directory)
+    source_directory = pathlib.Path(DATA_DIR / relative_source_directory)
+    target_directory = pathlib.Path(DATA_DIR / relative_target_directory)
+    image_directory = target_directory / "images"
+    
+    target_directory.mkdir(parents=True, exist_ok=True)
+    image_directory.mkdir(parents=True, exist_ok=True)
+
+    data_samples = os.listdir(source_directory)
 
     # This could be a seperate script that just looks for directories with the right name
     for data_sample_dir in data_samples:
-        image_json_path = f"{directory}/{data_sample_dir}/coco_image.json"
+        image_json_path = f"{source_directory}/{data_sample_dir}/coco_image.json"
 
         with open(image_json_path, "r") as file:
             coco_image = CocoImage(**json.load(file))
         images.append(coco_image)
 
         # use glob to find all annotation files
-        annotation_path = f"{directory}/{data_sample_dir}/coco_annotation.json"
+        annotation_path = f"{source_directory}/{data_sample_dir}/coco_annotation.json"
         with open(annotation_path, "r") as file:
             coco_annotation = CocoKeypointAnnotation(**json.load(file))
         annotations.append(coco_annotation)
 
-    labels = CocoKeypointsDataset(categories=categories, images=images, annotations=annotations)
-    annotations_json = "coco.json"
-    # TODO: copy the images to a new directory, update the image paths to be relative to the new directory and then save the json there
-    # dir
-    # /images
-    # coco.json (with image paths relative to /images)
 
+    # copy images and make jpg
+    print("copying images")
+    for coco_image in tqdm(images):
+        assert isinstance(coco_image, CocoImage)
+        src_path = coco_image.file_name
+        dst_path = image_directory / f"{coco_image.id}.jpg"
+        # copy image to new location and encode as jpg
+        img = cv2.imread(src_path)
+        cv2.imwrite(str(dst_path), img, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+
+        # update image file name to relative path wrt image directory
+        coco_image.file_name = str(dst_path.relative_to(target_directory))
+
+
+    labels = CocoKeypointsDataset(categories=categories, images=images, annotations=annotations)
+    annotations_json = target_directory / "annotations.json"
     with open(annotations_json, "w") as file:
         json.dump(labels.dict(exclude_none=True), file, indent=4)
 
 
 if __name__ == "__main__":
     from synthetic_cloth_data import DATA_DIR
+    import click
 
-    test_dir = DATA_DIR / "synthetic_images" / "deformed_test"
-    create_coco_dataset_from_intermediates(test_dir)
+    @click.command()
+    @click.option("--target_dir", default="datasets/TOWEL/dev", help="Target directory")
+    @click.option("--src_dir", default="synthetic_images/TOWEL/dev", help="Source directory")
+    def cli_create_coco_dataset_from_intermediates(target_dir,src_dir):
+        create_coco_dataset_from_intermediates(target_dir,src_dir)
+
+    cli_create_coco_dataset_from_intermediates()
+
