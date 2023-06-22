@@ -1039,6 +1039,13 @@ pyflex_render(bool uv)
 
 }
 
+void pyflex_set_gravity(float x, float y, float z)
+{
+    g_params.gravity[0] = x;
+    g_params.gravity[1] = y;
+    g_params.gravity[2] = z;
+}
+
 PYBIND11_MODULE(pyflex, m)
 {
     m.def("main", &main);
@@ -1120,4 +1127,5 @@ PYBIND11_MODULE(pyflex, m)
     m.def("emit_particles_box", &pyflex_emit_particles_box, "Emit particles (box)");
     m.def("emit_particles_cone", &pyflex_emit_particles_cone, "Emit particles (cone)");
     m.def("change_cloth_color", &pyflex_change_cloth_color, "Change color");
+    m.def("set_gravity", &pyflex_set_gravity, "Set gravity");
 }
