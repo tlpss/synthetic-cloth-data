@@ -12,3 +12,4 @@ synthetic-cloth-data/data/
 **.log
 **/coco.json
 
+pyflex/PyFlex/bindings/build/

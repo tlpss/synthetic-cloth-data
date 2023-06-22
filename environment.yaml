@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python=3.10
   - pip
+  - pybind11=2.10.4 # needed for PyFlex bindings
   - pip:
     - -e airo-blender/airo-mono/airo-typing
     - -e airo-blender/airo-mono/airo-dataset-tools/ # COCO dataset tools
