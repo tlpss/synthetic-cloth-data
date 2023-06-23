@@ -39,6 +39,8 @@ public:
         g_params.relaxationFactor = 1.0f;
         g_params.shapeCollisionMargin = 0.04f;
 
+        g_params.drag = 0.0001f;
+
         g_sceneLower = Vec3(-1.0f);
         g_sceneUpper = Vec3(1.0f);
 
@@ -51,6 +53,7 @@ public:
             }
             if (key == "particle_friction") g_params.particleFriction = std::stof(py::str(item.second));
             if (key == "static_friction") g_params.staticFriction = std::stof(py::str(item.second));
+            if (key == "drag") g_params.drag = std::stof(py::str(item.second));
         }
 
 
