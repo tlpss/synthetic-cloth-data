@@ -150,7 +150,7 @@ class ParticleGrasper:
 
 
 def get_pyflex_cloth_scene_config(
-    dynamic_friction: float = 0.75, particle_friction: float = 1.0, static_friction: float = 0.1
+    dynamic_friction: float = 0.75, particle_friction: float = 1.0, static_friction: float = 0.0
 ):
     """default values taken from Cloth Funnels codebase for now."""
     pyflex_config = {
@@ -176,7 +176,7 @@ def get_pyflex_cloth_scene_config(
 
 
 def read_obj_mesh(obj_path: str):
-    """loads an tri-obj. Only tri-mesh is acceptable!"""
+    """loads an tri-obj. accepts only trimeshes!"""
     vertices, faces = [], []
     with open(obj_path, "r") as f:
         lines = f.readlines()
@@ -197,7 +197,6 @@ def create_constraints(vertices, faces):
     stretch_edges = []
     for face in faces:
         x, y, z = face
-        print(x, y, z)
         stretch_edges.append([x, y])
         stretch_edges.append([y, z])
         stretch_edges.append([z, x])
@@ -212,7 +211,7 @@ def create_constraints(vertices, faces):
 def load_cloth_mesh_in_simulator(
     obj_path: str,
     position=None,
-    cloth_stretch_stiffness: float = 0.75,
+    cloth_stretch_stiffness: float = 0.6,
     cloth_bending_stiffness: float = 0.02,
     cloth_shear_stiffness: float = 0.02,
     cloth_mass: float = 20.0,
@@ -221,14 +220,14 @@ def load_cloth_mesh_in_simulator(
     stretch_constraints, bend_constraints, shear_constraints = create_constraints(vertices, faces)
 
     if position is None:
-        position = np.array([[0, 1, 0]])  # default
+        position = np.array([[0, 1.0, 0]])  # default
     pyflex.add_cloth_mesh(
         position=position,
-        verts=vertices,
-        faces=faces,
-        stretch_edges=stretch_constraints,
-        bend_edges=bend_constraints,
-        shear_edges=shear_constraints,
+        verts=np.array(vertices).flatten(),
+        faces=np.array(faces).flatten(),
+        stretch_edges=stretch_constraints.flatten(),
+        bend_edges=bend_constraints.flatten(),
+        shear_edges=shear_constraints.flatten(),
         stiffness=(cloth_stretch_stiffness, cloth_bending_stiffness, cloth_shear_stiffness),
         uvs=np.array([]),
         mass=cloth_mass,
@@ -266,12 +265,11 @@ if __name__ == "__main__":
 
     print(len(cloth_vertices))
 
-    n_particles = len(cloth_vertices) // 3
+    n_particles = len(cloth_vertices)
     pyflex_stepper = PyFlexStepWrapper()
     cloth_system = ClothParticleSystem(n_particles, pyflex_stepper=pyflex_stepper)
-    time.sleep(2)
     cloth_system.center_object()
-    pyflex.set_gravity(0, -10, 0)
+    pyflex.set_gravity(0, -9.81, 0)
 
     # drop cloth to the ground
     wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper)
