@@ -147,14 +147,13 @@ class ParticleGrasper:
             # make the fold motion elliptical
             # to reduce y-axis strain to avoid displacements during folding.
             # cf. https://www.frontiersin.org/articles/10.3389/fnbot.2022.989702/full
-            new_position[1] *= 0.9
-            print(new_position)
-            self.move_particle(new_position)
+            new_position[1] *= 0.7
+            self.move_particle(new_position, 0.05)  # as fast as possible while remaining quasi-static
         wait_until_scene_is_stable(pyflex_stepper=self.pyflex_stepper)
 
 
 def create_pyflex_cloth_scene_config(
-    dynamic_friction: float = 0.75, particle_friction: float = 1.0, static_friction: float = 0.0
+    dynamic_friction: float = 0.75, particle_friction: float = 1.0, static_friction: float = 0.0, drag: float = 0.002
 ):
 
     # default values taken from Cloth Funnels codebase for now.
@@ -163,8 +162,8 @@ def create_pyflex_cloth_scene_config(
         "camera_params": {
             "default_camera": {
                 "render_type": ["cloth"],
-                "cam_position": [0, 2, 0],
-                "cam_angle": [np.pi / 2, -np.pi / 2, 0.0],
+                "cam_position": [1, 0.5, 0],
+                "cam_angle": [np.pi / 2, -np.pi / 8, 0.0],
                 "cam_size": [480, 480],
                 "cam_fov": 80 / 180 * np.pi,
             }
@@ -174,6 +173,7 @@ def create_pyflex_cloth_scene_config(
             "dynamic_friction": dynamic_friction,  # friction between cloth and rigid objects
             "particle_friction": particle_friction,  # friction between cloth particles
             "static_friction": static_friction,  # friction between rigid objects
+            "drag": drag,  # drag coefficient of the cloth - air interaction (requires unequal particle masses to have effect?)
         },
     }
 
