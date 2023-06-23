@@ -1,4 +1,7 @@
 import numpy as np
+import trimesh
+from airo_spatial_algebra import SE3Container
+from trimesh.exchange.obj import export_obj
 
 import pyflex
 
@@ -120,41 +123,59 @@ class ParticleGrasper:
         self.move_particle(self.get_particle_position() + displacement, 0.01)
         wait_until_scene_is_stable(pyflex_stepper=self.pyflex_stepper)
 
+    def circular_fold_particle(self, arc_displacement, angle):
+        initial_position = self.get_particle_position()
+        final_position = initial_position + arc_displacement
+        point = (initial_position + final_position) / 2
 
-def get_cloth_scene_config(
-    particle_radius: float = 0.0175, cloth_stiffness: tuple = (0.75, 0.02, 0.02), scale: float = 1.0
+        # get rotation vector as the cross produc of the displacement and the upright vector
+        line = np.cross((final_position - initial_position), np.array([0, 1, 0]))
+        line = line / np.linalg.norm(line)
+        line = -line  # the rotation vector is in the opposite direction of the cross product
+
+        n_steps = 5
+
+        for i in range(n_steps + 1):
+            rotation_matrix = SE3Container.from_rotation_vector_and_translation(
+                line * angle / n_steps * i
+            ).rotation_matrix
+            new_position = np.matmul(rotation_matrix, initial_position - point) + point
+            # make the fold motion elliptical
+            # to reduce y-axis strain to avoid displacements during folding.
+            # cf. https://www.frontiersin.org/articles/10.3389/fnbot.2022.989702/full
+            new_position[1] *= 0.7
+            self.move_particle(new_position)
+            print(new_position)
+        wait_until_scene_is_stable(pyflex_stepper=self.pyflex_stepper)
+
+
+def get_pyflex_cloth_scene_config(
+    dynamic_friction: float = 0.75, particle_friction: float = 1.0, static_friction: float = 0.1
 ):
-    config = {
-        "scale": 1.0,
-        "cloth_pos": [0.0, 1.0, 0.0],
-        "cloth_size": [int(0.6 / particle_radius), int(0.368 / particle_radius)],
-        "cloth_stiff": cloth_stiffness,  # Stretch, Bend and Shear
-        "cloth_mass": 0.2,
+    """default values taken from Cloth Funnels codebase for now."""
+    pyflex_config = {
         "camera_name": "default_camera",
         "camera_params": {
             "default_camera": {
                 "render_type": ["cloth"],
-                "cam_position": [0, 5, 0],
-                "cam_angle": [np.pi / 2, -np.pi / 2, 0],
+                "cam_position": [0, 2, 0],
+                "cam_angle": [np.pi / 2, -np.pi / 2, 0.0],
                 "cam_size": [480, 480],
-                "cam_fov": 39.5978 / 180 * np.pi,
+                "cam_fov": 80 / 180 * np.pi,
             }
         },
         "scene_config": {
-            "scene_id": 0,
-            "radius": particle_radius * scale,
-            "buoyancy": 0,
-            "numExtraParticles": 20000,
-            "collisionDistance": 0.0006,
-            "msaaSamples": 0,
+            "scene_id": 0,  # the Empty Scene.
+            "dynamic_friction": dynamic_friction,  # friction between cloth and rigid objects
+            "particle_friction": particle_friction,  # friction between cloth particles
+            "static_friction": static_friction,  # friction between rigid objects
         },
-        "flip_mesh": 0,
     }
 
-    return config
+    return pyflex_config
 
 
-def load_tri_cloth_mesh_into_config(obj_path: str, config: dict):
+def read_obj_mesh(obj_path: str):
     """loads an tri-obj. Only tri-mesh is acceptable!"""
     vertices, faces = [], []
     with open(obj_path, "r") as f:
@@ -169,27 +190,66 @@ def load_tri_cloth_mesh_into_config(obj_path: str, config: dict):
             face = [int(n[0]) - 1 for n in idx]
             assert len(face) == 3
             faces.append(face)
+    return vertices, faces
 
+
+def create_constraints(vertices, faces):
     stretch_edges = []
     for face in faces:
         x, y, z = face
+        print(x, y, z)
         stretch_edges.append([x, y])
         stretch_edges.append([y, z])
         stretch_edges.append([z, x])
 
-    vertices = np.array(vertices)
-    faces = np.array(faces)
     stretch_constraints = np.array(stretch_edges)
     bend_constraints = np.array([])
     shear_constraints = np.array([])
-    uvs = np.array([])
 
-    config["mesh_verts"] = vertices.flatten()
-    config["mesh_faces"] = faces.flatten()
-    config["mesh_stretch_edges"] = stretch_constraints.flatten()
-    config["mesh_bend_edges"] = bend_constraints.flatten()
-    config["mesh_shear_edges"] = shear_constraints.flatten()
-    config["mesh_nocs_verts"] = uvs.flatten()
+    return stretch_constraints, bend_constraints, shear_constraints
+
+
+def load_cloth_mesh_in_simulator(
+    obj_path: str,
+    position=None,
+    cloth_stretch_stiffness: float = 0.75,
+    cloth_bending_stiffness: float = 0.02,
+    cloth_shear_stiffness: float = 0.02,
+    cloth_mass: float = 20.0,
+):
+    vertices, faces = read_obj_mesh(obj_path)
+    stretch_constraints, bend_constraints, shear_constraints = create_constraints(vertices, faces)
+
+    if position is None:
+        position = np.array([[0, 1, 0]])  # default
+    pyflex.add_cloth_mesh(
+        position=position,
+        verts=vertices,
+        faces=faces,
+        stretch_edges=stretch_constraints,
+        bend_edges=bend_constraints,
+        shear_edges=shear_constraints,
+        stiffness=(cloth_stretch_stiffness, cloth_bending_stiffness, cloth_shear_stiffness),
+        uvs=np.array([]),
+        mass=cloth_mass,
+    )
+
+    return vertices, faces
+
+
+def create_obj_with_new_vertex_positions(positions: np.ndarray, obj_path: str, target_obj_path: str):
+    """Creates a new obj mesh by replacing the positions of the vertices in the original obj mesh. The order positions must match the order of the vertices in the original mesh."""
+    mesh = trimesh.load(obj_path, process=False)  # keep order!
+    assert len(mesh.vertices) == len(
+        positions
+    ), "Cannot update positions if the number of vertices does not match the number of positions!"
+    mesh.vertices = positions
+    # remove materials to avoid exporting .mtl files
+    mesh.visual = trimesh.visual.ColorVisuals()
+    # export to string and then to new obj
+    obj_string = export_obj(mesh)
+    with open(target_obj_path, "w") as f:
+        f.write(obj_string)
 
 
 if __name__ == "__main__":
@@ -197,30 +257,21 @@ if __name__ == "__main__":
 
     pyflex.init(False, True, 480, 480, 0)
 
-    config = get_cloth_scene_config()
+    config = get_pyflex_cloth_scene_config()
     pyflex.set_scene(config["scene_config"]["scene_id"], config["scene_config"])
     pyflex.set_camera_params(config["camera_params"][config["camera_name"]])
 
     mesh_path = "/home/tlips/Documents/cloth-funnels/cloth_funnels/rtf/000000.obj"
-    load_tri_cloth_mesh_into_config(mesh_path, config)
+    cloth_vertices, _ = load_cloth_mesh_in_simulator(mesh_path)
 
-    pyflex.add_cloth_mesh(
-        position=config["cloth_pos"],
-        verts=config["mesh_verts"],
-        faces=config["mesh_faces"],
-        stretch_edges=config["mesh_stretch_edges"],
-        bend_edges=config["mesh_bend_edges"],
-        shear_edges=config["mesh_shear_edges"],
-        stiffness=config["cloth_stiff"],
-        uvs=config["mesh_nocs_verts"],
-        mass=config["cloth_mass"],
-    )
+    print(len(cloth_vertices))
 
-    n_particles = len(config["mesh_verts"]) // 3
+    n_particles = len(cloth_vertices) // 3
     pyflex_stepper = PyFlexStepWrapper()
     cloth_system = ClothParticleSystem(n_particles, pyflex_stepper=pyflex_stepper)
-
+    time.sleep(2)
     cloth_system.center_object()
+    pyflex.set_gravity(0, -10, 0)
 
     # drop cloth to the ground
     wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper)
@@ -229,5 +280,19 @@ if __name__ == "__main__":
     grasper = ParticleGrasper(pyflex_stepper)
 
     grasper.grasp_particle(grasp_particle_idx)
-    grasper.squared_fold_particle(0.1, np.array([0.2, 0, 0]))
+    # grasper.squared_fold_particle(0.05, np.array([0.2, 0, 0]))
+
+    idx = np.random.randint(0, n_particles)
+    point = cloth_system.get_positions()[idx]
+    print(point)
+    point = np.array([0.0, 0, 0])
+    grasper.circular_fold_particle(np.array([0.3, 0, 0]), np.pi)
+    grasper.release_particle()
+
+    for _ in range(200):
+        pyflex_stepper.step()
+
+    create_obj_with_new_vertex_positions(cloth_system.get_positions(), mesh_path, "test.obj")
+
+    pyflex.render()
     time.sleep(2)
