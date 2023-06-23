@@ -1,16 +1,16 @@
 import json
 import os
+import pathlib
 
+import cv2
 from airo_dataset_tools.data_parsers.coco import (
     CocoImage,
     CocoKeypointAnnotation,
     CocoKeypointCategory,
     CocoKeypointsDataset,
 )
-from synthetic_cloth_data.utils import SHORT_KEYPOINTS, TOWEL_KEYPOINTS, TSHIRT_KEYPOINTS, CLOTH_TYPE_TO_COCO_CATEGORY_ID
 from synthetic_cloth_data import DATA_DIR
-import pathlib 
-import cv2
+from synthetic_cloth_data.utils import SHORT_KEYPOINTS, TOWEL_KEYPOINTS, TSHIRT_KEYPOINTS
 from tqdm import tqdm
 
 towel_category = CocoKeypointCategory(
@@ -33,6 +33,7 @@ short_category = CocoKeypointCategory(
     keypoints=SHORT_KEYPOINTS,
 )
 
+
 def create_coco_dataset_from_intermediates(relative_target_directory, relative_source_directory: str):
 
     categories = [towel_category, tshirt_category, short_category]
@@ -42,7 +43,7 @@ def create_coco_dataset_from_intermediates(relative_target_directory, relative_s
     source_directory = pathlib.Path(DATA_DIR / relative_source_directory)
     target_directory = pathlib.Path(DATA_DIR / relative_target_directory)
     image_directory = target_directory / "images"
-    
+
     target_directory.mkdir(parents=True, exist_ok=True)
     image_directory.mkdir(parents=True, exist_ok=True)
 
@@ -62,7 +63,6 @@ def create_coco_dataset_from_intermediates(relative_target_directory, relative_s
             coco_annotation = CocoKeypointAnnotation(**json.load(file))
         annotations.append(coco_annotation)
 
-
     # copy images and make jpg
     print("copying images")
     for coco_image in tqdm(images):
@@ -76,7 +76,6 @@ def create_coco_dataset_from_intermediates(relative_target_directory, relative_s
         # update image file name to relative path wrt image directory
         coco_image.file_name = str(dst_path.relative_to(target_directory))
 
-
     labels = CocoKeypointsDataset(categories=categories, images=images, annotations=annotations)
     annotations_json = target_directory / "annotations.json"
     with open(annotations_json, "w") as file:
@@ -84,14 +83,12 @@ def create_coco_dataset_from_intermediates(relative_target_directory, relative_s
 
 
 if __name__ == "__main__":
-    from synthetic_cloth_data import DATA_DIR
     import click
 
     @click.command()
     @click.option("--target_dir", default="datasets/TOWEL/dev", help="Target directory")
     @click.option("--src_dir", default="synthetic_images/TOWEL/dev", help="Source directory")
-    def cli_create_coco_dataset_from_intermediates(target_dir,src_dir):
-        create_coco_dataset_from_intermediates(target_dir,src_dir)
+    def cli_create_coco_dataset_from_intermediates(target_dir, src_dir):
+        create_coco_dataset_from_intermediates(target_dir, src_dir)
 
     cli_create_coco_dataset_from_intermediates()
-
