@@ -1,3 +1,7 @@
+"""a bunch of utility functions and classes for deforming cloth meshes with pyflex.
+parts of this code are inspired on https://github.com/columbia-ai-robotics/cloth-funnels/blob/main/cloth_funnels/utils/task_utils.py """
+from collections import defaultdict
+
 import numpy as np
 import trimesh
 from airo_spatial_algebra import SE3Container
@@ -7,6 +11,8 @@ import pyflex
 
 
 class PyFlexStepWrapper:
+    """base class for wrapping pyflex.step() calls. Can be inherited to add functionality such as logging or rendering."""
+
     def __init__(self):
         pass
 
@@ -14,18 +20,9 @@ class PyFlexStepWrapper:
         pyflex.step()
 
 
-class RenderPyFlexStepWrapper(PyFlexStepWrapper):
-    def __init__(self, render):
-        self.render = render
-
-    def step(self):
-        super().step()
-        # get an image of the scene
-        # and save it somewhere.
-        raise NotImplementedError
-
-
 class ClothParticleSystem:
+    """Convenience class for interacting with Flex particles that represent a cloth item"""
+
     def __init__(self, n_particles, pyflex_stepper: PyFlexStepWrapper) -> None:
         self.n_particles = n_particles
         self.pyflex_stepper = pyflex_stepper
@@ -74,19 +71,24 @@ def wait_until_scene_is_stable(max_steps=100, tolerance=1e-2, pyflex_stepper: Py
 
 
 class ParticleGrasper:
+    """simulates a gripper that can grasp and release a single particle. Used to (partially) fold clothes"""
+
     def __init__(self, pyflex_stepper: PyFlexStepWrapper):
         self.particle_idx = None
         self.original_inv_mass = None
         self.pyflex_stepper = pyflex_stepper
 
     def grasp_particle(self, particle_idx):
+        """grasp particle by setting its inverse mass to 0, so that it is rigidly attached to the 'gripper'"""
         self.particle_idx = particle_idx
         pyflex_positions = pyflex.get_positions().reshape(-1, 4)
         self.original_inv_mass = pyflex_positions[particle_idx, 3]
+
         pyflex_positions[particle_idx, 3] = 0.0
         pyflex.set_positions(pyflex_positions.flatten())
 
     def release_particle(self):
+        """release particle by setting its inverse mass to its original value"""
         pyflex_positions = pyflex.get_positions().reshape(-1, 4)
         pyflex_positions[self.particle_idx, 3] = self.original_inv_mass
         pyflex.set_positions(pyflex_positions.flatten())
@@ -100,6 +102,8 @@ class ParticleGrasper:
         return pyflex.get_positions().reshape(-1, 4)[self.particle_idx, :3]
 
     def move_particle(self, target_position, speed=0.01):
+        """move the grasped particle along a straight line to a target position with a given speed"""
+
         assert self.is_grasping(), "No particle is being grasped."
         curr_pos = pyflex.get_positions()
         pickpoint = self.particle_idx
@@ -149,10 +153,11 @@ class ParticleGrasper:
         wait_until_scene_is_stable(pyflex_stepper=self.pyflex_stepper)
 
 
-def get_pyflex_cloth_scene_config(
+def create_pyflex_cloth_scene_config(
     dynamic_friction: float = 0.75, particle_friction: float = 1.0, static_friction: float = 0.0
 ):
-    """default values taken from Cloth Funnels codebase for now."""
+
+    # default values taken from Cloth Funnels codebase for now.
     pyflex_config = {
         "camera_name": "default_camera",
         "camera_params": {
@@ -176,7 +181,7 @@ def get_pyflex_cloth_scene_config(
 
 
 def read_obj_mesh(obj_path: str):
-    """loads an tri-obj. accepts only trimeshes!"""
+    """loads a tri-mesh obj file and returns vertices and faces"""
     vertices, faces = [], []
     with open(obj_path, "r") as f:
         lines = f.readlines()
@@ -193,6 +198,34 @@ def read_obj_mesh(obj_path: str):
     return vertices, faces
 
 
+def get_1_ring_neighbourhood(faces):
+    neighbourhood = defaultdict(set)
+    for face in faces:
+        x, y, z = face
+        neighbourhood[x].add(y)
+        neighbourhood[x].add(z)
+        neighbourhood[y].add(x)
+        neighbourhood[y].add(z)
+        neighbourhood[z].add(x)
+        neighbourhood[z].add(y)
+
+    return neighbourhood
+
+
+def get_2_ring_neighborhoods(faces):
+    neighbourhood = get_1_ring_neighbourhood(faces)
+    neighbourhood_2 = defaultdict(set)
+    for vertex in neighbourhood:
+        two_ring_candidates = set()
+        for neighbour in neighbourhood[vertex]:
+            two_ring_candidates = two_ring_candidates.union(neighbourhood[neighbour])
+        # subtract the 1-ring neighbours
+        two_ring_neighbours = two_ring_candidates.difference(neighbourhood[vertex])
+
+        neighbourhood_2[vertex] = two_ring_neighbours
+    return neighbourhood_2
+
+
 def create_constraints(vertices, faces):
     stretch_edges = []
     for face in faces:
@@ -202,7 +235,16 @@ def create_constraints(vertices, faces):
         stretch_edges.append([z, x])
 
     stretch_constraints = np.array(stretch_edges)
-    bend_constraints = np.array([])
+
+    bend_constraints = []
+    two_ring_neighbourhood_dict = get_2_ring_neighborhoods(faces)
+    for vertex_id, two_ring_neighbours in two_ring_neighbourhood_dict.items():
+        for neighbour in two_ring_neighbours:
+            if neighbour > vertex_id:
+                bend_constraints.append([vertex_id, neighbour])
+
+    bend_constraints = np.array(bend_constraints)
+
     shear_constraints = np.array([])
 
     return stretch_constraints, bend_constraints, shear_constraints
@@ -212,10 +254,13 @@ def load_cloth_mesh_in_simulator(
     obj_path: str,
     position=None,
     cloth_stretch_stiffness: float = 0.6,
-    cloth_bending_stiffness: float = 0.02,
-    cloth_shear_stiffness: float = 0.02,
+    cloth_bending_stiffness: float = 0.0,
+    cloth_shear_stiffness: float = 0.0,
     cloth_mass: float = 20.0,
 ):
+    """loads a cloth mesh in the simulator and creates a particle system with stretch constraints between the 1-ring neighbours and bending constraints between the 2-ring neighbours.
+    as in the Nivida Flex docs. The resting state of all constraints is set to the initial mesh configuration.
+    """
     vertices, faces = read_obj_mesh(obj_path)
     stretch_constraints, bend_constraints, shear_constraints = create_constraints(vertices, faces)
 
@@ -256,14 +301,12 @@ if __name__ == "__main__":
 
     pyflex.init(False, True, 480, 480, 0)
 
-    config = get_pyflex_cloth_scene_config()
+    config = create_pyflex_cloth_scene_config()
     pyflex.set_scene(config["scene_config"]["scene_id"], config["scene_config"])
     pyflex.set_camera_params(config["camera_params"][config["camera_name"]])
 
     mesh_path = "/home/tlips/Documents/cloth-funnels/cloth_funnels/rtf/000000.obj"
     cloth_vertices, _ = load_cloth_mesh_in_simulator(mesh_path)
-
-    print(len(cloth_vertices))
 
     n_particles = len(cloth_vertices)
     pyflex_stepper = PyFlexStepWrapper()
@@ -278,7 +321,6 @@ if __name__ == "__main__":
     grasper = ParticleGrasper(pyflex_stepper)
 
     grasper.grasp_particle(grasp_particle_idx)
-    # grasper.squared_fold_particle(0.05, np.array([0.2, 0, 0]))
 
     idx = np.random.randint(0, n_particles)
     point = cloth_system.get_positions()[idx]
@@ -287,10 +329,6 @@ if __name__ == "__main__":
     grasper.circular_fold_particle(np.array([0.3, 0, 0]), np.pi)
     grasper.release_particle()
 
-    for _ in range(200):
-        pyflex_stepper.step()
-
     create_obj_with_new_vertex_positions(cloth_system.get_positions(), mesh_path, "test.obj")
 
-    pyflex.render()
     time.sleep(2)
