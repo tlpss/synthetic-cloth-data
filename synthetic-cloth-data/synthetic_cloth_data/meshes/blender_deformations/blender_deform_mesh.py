@@ -146,6 +146,8 @@ def generate_deformed_mesh(
     ob.name = ob.name.split(".")[0] + "_blender_deformed"
     kp = json.load(open(flat_mesh_path.replace(".obj", ".json")))["keypoint_vertices"]
 
+    # TODO: probably can remove this as we use a mesh that has
+    # already been unwrapped...
     _unwrap_cloth_mesh(ob)
     ob.location = np.array([0, 0, 1.0])
 

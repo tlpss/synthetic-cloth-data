@@ -127,9 +127,9 @@ class ParticleGrasper:
         self.move_particle(self.get_particle_position() + displacement, 0.01)
         wait_until_scene_is_stable(pyflex_stepper=self.pyflex_stepper)
 
-    def circular_fold_particle(self, arc_displacement, angle):
+    def circular_fold_particle(self, displacement, angle):
         initial_position = self.get_particle_position()
-        final_position = initial_position + arc_displacement
+        final_position = initial_position + displacement
         point = (initial_position + final_position) / 2
 
         # get rotation vector as the cross produc of the displacement and the upright vector
@@ -137,7 +137,7 @@ class ParticleGrasper:
         line = line / np.linalg.norm(line)
         line = -line  # the rotation vector is in the opposite direction of the cross product
 
-        n_steps = 5
+        n_steps = int(angle / np.pi * 10)
 
         for i in range(n_steps + 1):
             rotation_matrix = SE3Container.from_rotation_vector_and_translation(
@@ -147,9 +147,9 @@ class ParticleGrasper:
             # make the fold motion elliptical
             # to reduce y-axis strain to avoid displacements during folding.
             # cf. https://www.frontiersin.org/articles/10.3389/fnbot.2022.989702/full
-            new_position[1] *= 0.7
-            self.move_particle(new_position)
+            new_position[1] *= 0.9
             print(new_position)
+            self.move_particle(new_position)
         wait_until_scene_is_stable(pyflex_stepper=self.pyflex_stepper)
 
 
@@ -226,7 +226,7 @@ def get_2_ring_neighborhoods(faces):
     return neighbourhood_2
 
 
-def create_constraints(vertices, faces):
+def create_constraints(faces):
     stretch_edges = []
     for face in faces:
         x, y, z = face
@@ -262,7 +262,7 @@ def load_cloth_mesh_in_simulator(
     as in the Nivida Flex docs. The resting state of all constraints is set to the initial mesh configuration.
     """
     vertices, faces = read_obj_mesh(obj_path)
-    stretch_constraints, bend_constraints, shear_constraints = create_constraints(vertices, faces)
+    stretch_constraints, bend_constraints, shear_constraints = create_constraints(faces)
 
     if position is None:
         position = np.array([[0, 1.0, 0]])  # default
@@ -312,7 +312,7 @@ if __name__ == "__main__":
     pyflex_stepper = PyFlexStepWrapper()
     cloth_system = ClothParticleSystem(n_particles, pyflex_stepper=pyflex_stepper)
     cloth_system.center_object()
-    pyflex.set_gravity(0, -9.81, 0)
+    # pyflex.set_gravity(0, 0, 0)
 
     # drop cloth to the ground
     wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper)
@@ -324,9 +324,8 @@ if __name__ == "__main__":
 
     idx = np.random.randint(0, n_particles)
     point = cloth_system.get_positions()[idx]
-    print(point)
     point = np.array([0.0, 0, 0])
-    grasper.circular_fold_particle(np.array([0.3, 0, 0]), np.pi)
+    grasper.circular_fold_particle(np.array([-0.3, 0, 0]), np.pi)
     grasper.release_particle()
 
     create_obj_with_new_vertex_positions(cloth_system.get_positions(), mesh_path, "test.obj")
