@@ -289,9 +289,13 @@ def create_obj_with_new_vertex_positions(positions: np.ndarray, obj_path: str, t
     ), "Cannot update positions if the number of vertices does not match the number of positions!"
     mesh.vertices = positions
     # remove materials to avoid exporting .mtl files
-    mesh.visual = trimesh.visual.ColorVisuals()
+    # cannot use this trick as it will remove the texture coordinates from the obj..
+    #mesh.visual = trimesh.visual.ColorVisuals()
     # export to string and then to new obj
-    obj_string = export_obj(mesh)
+    obj_string = export_obj(mesh,include_texture=True)
+    # remove second and third line from obj string
+    # which corresponds to the material
+    obj_string = "\n".join(obj_string.split("\n")[2:])
     with open(target_obj_path, "w") as f:
         f.write(obj_string)
 
