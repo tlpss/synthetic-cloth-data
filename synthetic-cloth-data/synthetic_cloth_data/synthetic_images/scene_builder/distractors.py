@@ -12,7 +12,7 @@ from synthetic_cloth_data.synthetic_images.scene_builder.utils.assets import Ass
 
 @dataclasses.dataclass
 class DistractorConfig(AssetConfig):
-    max_distractors: int = 2
+    max_distractors: int = 6
     asset_json_relative_path: str = GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_RELATIVE_PATH
 
 

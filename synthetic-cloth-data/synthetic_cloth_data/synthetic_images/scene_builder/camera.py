@@ -15,8 +15,8 @@ class CameraConfig:
     vertical_resolution: int = 288  # 16:9 aspect ratio
     horizontal_sensor_size: int = 8.67  # 1/3 inch sensor
     # extrinsics
-    minimal_camera_height: float = 0.7
-    max_sphere_radius: float = 1.8
+    minimal_camera_height: float = 0.1
+    max_sphere_radius: float = 1.0
 
 
 def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_vertices_dict: dict) -> bpy.types.Object:
@@ -45,20 +45,25 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
         phi = np.random.uniform(0, 2 * np.pi)
         x = np.sqrt(1 - z**2) * np.cos(phi)
         y = np.sqrt(1 - z**2) * np.sin(phi)
+
+        x = np.random.uniform(-0.5,0.5)
+        y = np.random.uniform(-0.5,0.5)
         point_on_unit_sphere = np.array([x, y, z])
+
         return point_on_unit_sphere
 
     camera_placed = False
     while not camera_placed:
         camera.location = _sample_point_on_unit_sphere(
-            z_min=config.minimal_camera_height / config.max_sphere_radius
-        ) * np.random.uniform(1, config.max_sphere_radius)
+            z_min=config.minimal_camera_height 
+        ) #* np.random.uniform(1, config.max_sphere_radius)
         # Make the camera look at tthe origin, around which the cloth and table are assumed to be centered.
         camera_direction = -camera.location
         camera_direction = Vector(camera_direction)
         camera.rotation_euler = camera_direction.to_track_quat("-Z", "Y").to_euler()
 
         bpy.context.view_layer.update()  # update the scene to propagate the new camera location & orientation
+        camera_placed = True
         camera_placed = are_keypoints_in_camera_frustum(cloth_object, keypoint_vertices_dict, camera)
 
     return camera

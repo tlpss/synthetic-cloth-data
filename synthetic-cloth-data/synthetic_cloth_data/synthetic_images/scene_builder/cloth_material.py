@@ -24,7 +24,7 @@ class TowelMaterialConfig(ClothMaterialConfig):
 
 def add_material_to_cloth_mesh(config: ClothMaterialConfig, cloth_object: bpy.types.Object, cloth_type: CLOTH_TYPES):
     if cloth_type == CLOTH_TYPES.TSHIRT:
-        pass
+        _add_material_to_towel_mesh(config,cloth_object)
     elif cloth_type == CLOTH_TYPES.TOWEL:
         _add_material_to_towel_mesh(config, cloth_object)
 

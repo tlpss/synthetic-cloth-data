@@ -1,0 +1,12 @@
+defaults:
+  - camera: zed2i_256_256
+  - cloth_mesh: default
+  - _self_
+
+
+cloth_type: TOWEL
+id: 5
+relative_dataset_path: synthetic_images/TOWEL/00
+
+cloth_mesh:
+  mesh_path: deformed_meshes/TOWEL/00
