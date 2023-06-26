@@ -4,9 +4,11 @@ channels:
 dependencies:
   - python=3.10
   - pip
+  - pybind11=2.10.4 # needed for PyFlex bindings
   - pip:
     - -e airo-blender/airo-mono/airo-typing
     - -e airo-blender/airo-mono/airo-dataset-tools/ # COCO dataset tools
+    - -e airo-blender/airo-mono/airo-spatial-algebra/ # spatial algebra
     - -e airo-blender/ # blender integration
     - -e synthetic-cloth-data/
     - -e synthetic-cloth-data/synthetic_cloth_data/linen/linen # trajectories for deforming the meshes

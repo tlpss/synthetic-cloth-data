@@ -17,7 +17,7 @@ def visualize_meshes(mesh_dir: str, max_amount_to_visualize: int = 100):
     add_material(plane, (1, 0.5, 0.5, 1.0))
 
     meshes = list(pathlib.Path(mesh_dir).glob("*.obj"))
-    meshes = sorted(meshes, key=lambda x: int(x.stem))
+    meshes = sorted(meshes, key=lambda x: x.stem)
     print(f"Found {len(meshes)} meshes in {mesh_dir}")
     n_meshes = min(len(meshes), max_amount_to_visualize)
     for idx in tqdm.trange(n_meshes):
