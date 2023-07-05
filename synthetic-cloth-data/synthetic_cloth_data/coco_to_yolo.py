@@ -21,6 +21,11 @@ def create_yolo_dataset_from_coco_dataset(coco_dataset_json_path:str, target_dir
         images/
         labels/
         <>.txt # paths as in coco dataset /images subdir.
+
+        # ultralytics uses an additional <>.json, this has to be created manually..
+        # we do export a .names file, as in the darknet yolo format. 
+        # each line contains a class name, the line number is the class id
+        obj.names
     Args:
         coco_dataset_json_path: _description_
         target_directory: _description_
@@ -47,6 +52,11 @@ def create_yolo_dataset_from_coco_dataset(coco_dataset_json_path:str, target_dir
     for annotation in annotations:
         image_id_to_annotations[annotation.image_id].append(annotation)
 
+    category_id_to_category = {category.id: category for category in coco_dataset.categories}
+    # sort by original COCO ID, but whereas COCO does not care about ID ranges, YOLO expects them to be in the range 0..N-1
+    # so we sort them by ID and then use the index as the new ID
+    yolo_category_index = list(sorted(category_id_to_category.values(), key=lambda category: category.id))
+
     for image_id, annotations in tqdm.tqdm(image_id_to_annotations.items()):
         coco_image = image_id_to_image[image_id]
         image_path = pathlib.Path(coco_image.file_name)
@@ -60,9 +70,11 @@ def create_yolo_dataset_from_coco_dataset(coco_dataset_json_path:str, target_dir
 
         label_path = label_dir / f"{relative_image_path.with_suffix('')}.txt"
         label_path.parent.mkdir(parents=True, exist_ok=True)
+
         with open(label_path, "w") as file:
             for annotation in annotations:
-                category = coco_dataset.categories[annotation.category_id]
+                category = category_id_to_category[annotation.category_id]
+                yolo_id = yolo_category_index.index(category)
                 if use_segmentation:
                     segmentation = annotation.segmentation
                     # convert to polygon if required
@@ -72,10 +84,10 @@ def create_yolo_dataset_from_coco_dataset(coco_dataset_json_path:str, target_dir
                     if segmentation is None:
                         # should actually never happen as each annotation is assumed to have a segmentation if you pass use_segmentation=True
                         # but we filter it for convenience to deal with edge cases
-                        print(f"skipping annotation for image {image_path}, as it has nosegmentation")
+                        print(f"skipping annotation for image {image_path}, as it has no segmentation")
                         continue
                     segmentation = segmentation[0] # only use first polygon, since coco does not support multiple polygons?
-                    file.write(f"{category.id}")
+                    file.write(f"{yolo_id}")
                     for (x,y) in zip(segmentation[0::2], segmentation[1::2]):
                         file.write(f" {x/width} {y/height}")
                     file.write("\n")
@@ -88,9 +100,18 @@ def create_yolo_dataset_from_coco_dataset(coco_dataset_json_path:str, target_dir
                     y_center /= height
                     w /= width
                     h /= height
-                    file.write(f"{category.id} {x_center} {y_center} {w} {h}\n")
+                    file.write(f"{yolo_id} {x_center} {y_center} {w} {h}\n")
 
-        cv2.imwrite(str(image_dir / relative_image_path), image)
+        image_target_path = image_dir / relative_image_path
+        image_target_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(image_target_path), image)
+
+    # create the obj.names file
+    with open(target_dir / "obj.names", "w") as file:
+        # sort categories by id
+        for category in yolo_category_index:
+            file.write(f"{category.name}\n")
+    
 
 if __name__ == "__main__":
     # from synthetic_cloth_data import DATA_DIR
