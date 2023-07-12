@@ -8,6 +8,9 @@ import cv2
 from airo_dataset_tools.data_parsers.coco import CocoImage, CocoKeypointAnnotation
 from airo_dataset_tools.segmentation_mask_converter import BinarySegmentationMask
 from bpy_extras.object_utils import world_to_camera_view
+from synthetic_cloth_data.synthetic_images.scene_builder.utils.visible_vertices import (
+    is_vertex_occluded_for_scene_camera,
+)
 from synthetic_cloth_data.utils import CLOTH_TYPE_TO_COCO_CATEGORY_ID
 
 
@@ -42,11 +45,15 @@ def create_coco_annotations(
 
     coco_keypoints = []
     num_labeled_keypoints = 0
-    for keypoint_2D in keypoints_2D:
+    for keypoint_3D, keypoint_2D in zip(keypoints_3D, keypoints_2D):
         u, v, _ = keypoint_2D
         px = image_width * u
         py = image_height * (1.0 - v)
-        visible_flag = 2
+        # TODO: this won't work in combination with the blender soldify modifier as it can make the vertices occluded even though the keypoint is visible.
+        # possible solution: check the N-neighbors of the vertex and see if any of them are not occluded.
+        # this makes it dependent on the mesh resolution, but that is something I can live with for now.
+        visible_flag = 1 if is_vertex_occluded_for_scene_camera(keypoint_3D) else 2
+        print(f"{keypoint_3D}-> visible_flag: {visible_flag}")
 
         # Currently we set keypoints outside the image to be "not labeled"
         if px < 0 or py < 0 or px > image_width or py > image_height:
