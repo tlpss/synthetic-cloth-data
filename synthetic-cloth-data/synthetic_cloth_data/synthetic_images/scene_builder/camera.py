@@ -46,8 +46,8 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
         x = np.sqrt(1 - z**2) * np.cos(phi)
         y = np.sqrt(1 - z**2) * np.sin(phi)
 
-        x = np.random.uniform(-0.5,0.5)
-        y = np.random.uniform(-0.5,0.5)
+        x = np.random.uniform(-0.5, 0.5)
+        y = np.random.uniform(-0.5, 0.5)
         point_on_unit_sphere = np.array([x, y, z])
 
         return point_on_unit_sphere
@@ -55,8 +55,8 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
     camera_placed = False
     while not camera_placed:
         camera.location = _sample_point_on_unit_sphere(
-            z_min=config.minimal_camera_height 
-        ) #* np.random.uniform(1, config.max_sphere_radius)
+            z_min=config.minimal_camera_height
+        )  # * np.random.uniform(1, config.max_sphere_radius)
         # Make the camera look at tthe origin, around which the cloth and table are assumed to be centered.
         camera_direction = -camera.location
         camera_direction = Vector(camera_direction)

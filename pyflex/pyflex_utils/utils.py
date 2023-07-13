@@ -290,9 +290,9 @@ def create_obj_with_new_vertex_positions(positions: np.ndarray, obj_path: str, t
     mesh.vertices = positions
     # remove materials to avoid exporting .mtl files
     # cannot use this trick as it will remove the texture coordinates from the obj..
-    #mesh.visual = trimesh.visual.ColorVisuals()
+    # mesh.visual = trimesh.visual.ColorVisuals()
     # export to string and then to new obj
-    obj_string = export_obj(mesh,include_texture=True)
+    obj_string = export_obj(mesh, include_texture=True)
     # remove second and third line from obj string
     # which corresponds to the material
     obj_string = "\n".join(obj_string.split("\n")[2:])

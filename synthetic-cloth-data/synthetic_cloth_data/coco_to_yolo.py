@@ -1,13 +1,16 @@
-from collections import defaultdict
-import pathlib
-from airo_dataset_tools.data_parsers.coco import CocoCategory, CocoImage, CocoInstancesDataset
 import json
-from airo_dataset_tools.segmentation_mask_converter import BinarySegmentationMask
+import pathlib
+from collections import defaultdict
 
 import cv2
 import tqdm
+from airo_dataset_tools.data_parsers.coco import CocoInstancesDataset
+from airo_dataset_tools.segmentation_mask_converter import BinarySegmentationMask
 
-def create_yolo_dataset_from_coco_dataset(coco_dataset_json_path:str, target_directory: str, use_segmentation: bool = False):
+
+def create_yolo_dataset_from_coco_dataset(
+    coco_dataset_json_path: str, target_directory: str, use_segmentation: bool = False
+):
     """Converts a coco dataset to a yolo dataset
 
     coco dataset is expected:
@@ -15,7 +18,7 @@ def create_yolo_dataset_from_coco_dataset(coco_dataset_json_path:str, target_dir
         images/
         <>.json # containing paths relative to /dataset
 
-    yolo dataset format will be 
+    yolo dataset format will be
 
     dataset/
         images/
@@ -23,7 +26,7 @@ def create_yolo_dataset_from_coco_dataset(coco_dataset_json_path:str, target_dir
         <>.txt # paths as in coco dataset /images subdir.
 
         # ultralytics uses an additional <>.json, this has to be created manually..
-        # we do export a .names file, as in the darknet yolo format. 
+        # we do export a .names file, as in the darknet yolo format.
         # each line contains a class name, the line number is the class id
         obj.names
     Args:
@@ -43,7 +46,6 @@ def create_yolo_dataset_from_coco_dataset(coco_dataset_json_path:str, target_dir
     label_dir = target_dir / "labels"
     image_dir.mkdir(parents=True, exist_ok=True)
     label_dir.mkdir(parents=True, exist_ok=True)
-
 
     # create the yolo dataset
     annotations = coco_dataset.annotations
@@ -80,15 +82,17 @@ def create_yolo_dataset_from_coco_dataset(coco_dataset_json_path:str, target_dir
                     # convert to polygon if required
                     segmentation = BinarySegmentationMask.from_coco_segmentation_mask(segmentation, width, height)
                     segmentation = segmentation.as_polygon
-                    
+
                     if segmentation is None:
                         # should actually never happen as each annotation is assumed to have a segmentation if you pass use_segmentation=True
                         # but we filter it for convenience to deal with edge cases
                         print(f"skipping annotation for image {image_path}, as it has no segmentation")
                         continue
-                    segmentation = segmentation[0] # only use first polygon, since coco does not support multiple polygons?
+                    segmentation = segmentation[
+                        0
+                    ]  # only use first polygon, since coco does not support multiple polygons?
                     file.write(f"{yolo_id}")
-                    for (x,y) in zip(segmentation[0::2], segmentation[1::2]):
+                    for (x, y) in zip(segmentation[0::2], segmentation[1::2]):
                         file.write(f" {x/width} {y/height}")
                     file.write("\n")
 
@@ -111,13 +115,13 @@ def create_yolo_dataset_from_coco_dataset(coco_dataset_json_path:str, target_dir
         # sort categories by id
         for category in yolo_category_index:
             file.write(f"{category.name}\n")
-    
+
 
 if __name__ == "__main__":
     # from synthetic_cloth_data import DATA_DIR
     # coco_json = DATA_DIR / "datasets" / "TOWEL"/ "00" / "annotations.json"
     # target_dir = DATA_DIR / "datasets" / "TOWEL" / "yolo"/ "00"
-    import click 
+    import click
 
     @click.command()
     @click.option("--coco_json", type=str)
@@ -126,6 +130,5 @@ if __name__ == "__main__":
     def cli_coco_2_yolo(coco_json, target_dir, use_segmentation):
         print(f"converting coco dataset {coco_json} to yolo dataset {target_dir}")
         create_yolo_dataset_from_coco_dataset(coco_json, target_dir, use_segmentation=use_segmentation)
+
     cli_coco_2_yolo()
-
-
