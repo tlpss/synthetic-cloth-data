@@ -34,6 +34,8 @@ def add_cloth_surface_to_scene(config: SurfaceConfig) -> bpy.types.Object:
         material_dict = np.random.choice(config.polyhaven_materials.asset_list)
         material = ab.load_asset(**material_dict)
 
+        #TODO: change material base color to a random color?
+
         # disable actual mesh displacements as they change the geometry of the surface
         # and are not used in collision checking, which can cause the cloth to become 'invisible' in renders
         material.cycles.displacement_method = "BUMP"
