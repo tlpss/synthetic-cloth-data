@@ -9,6 +9,7 @@ setuptools.setup(
     install_requires=[
         "numpy",
         "trimesh",
+        "click"
     ],  # do not add pyflex here, has to be loaded manually
     packages=["pyflex_utils"],
 )

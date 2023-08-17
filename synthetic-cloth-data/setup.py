@@ -6,6 +6,6 @@ setuptools.setup(
     author="Thomas Lips",
     author_email="thomas.lips@ugent.be",
     description="TODO",
-    install_requires=["numpy", "airo-blender", "loguru", "trimesh", "triangle"],
+    install_requires=["numpy", "airo-blender", "loguru", "trimesh", "triangle","click"],
     packages=["synthetic_cloth_data"],
 )

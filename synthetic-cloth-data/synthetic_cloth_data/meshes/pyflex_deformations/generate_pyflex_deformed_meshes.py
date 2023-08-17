@@ -12,7 +12,8 @@ from synthetic_cloth_data.utils import get_metadata_dict_for_dataset
 @click.option("--mesh-dir", type=str, default="flat_meshes/TOWEL/dev")
 @click.option("--num-samples", type=int, default=20)
 @click.option("--output-dir", type=str, default="deformed_meshes/TOWEL/pyflex/dev")
-def generate_dataset(mesh_dir: str, num_samples: int, output_dir: str):
+@click.option("--start_id", type=int, default=0)
+def generate_dataset(mesh_dir: str, num_samples: int, output_dir: str, start_id: int):
 
     # write metadata
     data = {
@@ -26,7 +27,7 @@ def generate_dataset(mesh_dir: str, num_samples: int, output_dir: str):
     json.dump(data, open(metadata_path, "w"))
     print(f"Metadata written to {metadata_path}")
 
-    for id in tqdm.tqdm(range(num_samples)):
+    for id in tqdm.tqdm(range(start_id,start_id+num_samples)):
         generate_deformed_mesh(mesh_dir, output_dir, id, debug=False)
 
 

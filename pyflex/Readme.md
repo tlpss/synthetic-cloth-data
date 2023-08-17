@@ -31,11 +31,8 @@ docker exec -it  <containe-name/ID> bash
 
 Inside the container, activate your conda environment
 ```
-export PATH=/path/to/your/conda/installation/bin:$PATH
-conda init bash
-source ~/.bashrc
+source <conda-installation-path>/bin/activate
 conda activate <your-env>
-```
 And then install the requirements for
 Then set the required paths with
 ```
@@ -54,7 +51,7 @@ You can now exit the docker container and use pyflex from your conda environment
 
 ```
 source ./prepare.sh
-python pyflex/test_installation.py
+python pyflex_utils/test_installation.py
 ```
 
 This should print something like  (but with your GPU)

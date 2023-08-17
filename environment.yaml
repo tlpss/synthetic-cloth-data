@@ -12,3 +12,4 @@ dependencies:
     - -e airo-blender/ # blender integration
     - -e synthetic-cloth-data/
     - -e synthetic-cloth-data/synthetic_cloth_data/linen/linen # trajectories for deforming the meshes
+    - -e pyflex/
