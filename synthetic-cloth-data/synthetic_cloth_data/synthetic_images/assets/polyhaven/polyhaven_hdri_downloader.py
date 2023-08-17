@@ -4,6 +4,8 @@ This is a quick fix, instead of changing the resoluation at runtime using the ad
 because the operator is 'modal' and the feedback mechanism was not working
 so by downloading them upfront, the switch_resolution operation works instantly and the
 renders will already use the HDRI in the desired resolution.
+
+usage: blender -b -P polyhaven_hdri_downloader.py
 """
 
 import json

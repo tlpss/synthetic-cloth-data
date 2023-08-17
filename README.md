@@ -5,6 +5,7 @@ It contains
 - geometric templates for cloth items + bevels & bezier curves to generate flat meshes & their keypoint vertex IDs
 - code for deforming these meshes using PyFlex or the blender cloth simulator
 - code for cloth materials in blender
+- code for creating the scenes in blender
 - code for rendering images and creating COCO datasets.
 
 ## Installation
@@ -12,6 +13,7 @@ It contains
 - create conda env: `conda env create -f environment.yaml`
 - install & setup blender in airo-blender: from the `airo-blender/blender` folder, run `source ../bash_scripts/setup_blender.sh << path-to-your-conda-env`
 - add blender to your path: `source add_blender_to_path.sh`
+- download the blender assets that are used during the synthetic data generation, see [here](synthetic-cloth-data/synthetic_cloth_data/synthetic_images/assets/readme.md)
 - (if you need it) install pyflex by following the instructions [here](pyflex/Readme.md)
 
 ## Generating Data
