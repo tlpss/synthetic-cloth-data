@@ -1,0 +1,7 @@
+# @package _global_
+mesh_dir: flat_meshes/TOWEL/00
+output_dir: deformed_meshes/TOWEL/pyflex/00
+
+num_samples: 5000
+start_id: 0
+debug: False

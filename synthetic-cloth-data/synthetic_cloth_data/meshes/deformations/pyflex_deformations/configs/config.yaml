@@ -1,0 +1,16 @@
+deformation_config:
+  _target_: synthetic_cloth_data.meshes.deformations.pyflex_deformations.pyflex_deform_mesh.DeformationConfig
+
+mesh_dir: flat_meshes/TOWEL/dev
+output_dir: deformed_meshes/TOWEL/pyflex/dev
+
+num_samples: 1
+start_id: 0
+debug: True
+
+# no logging for now
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+
