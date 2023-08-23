@@ -11,10 +11,10 @@ from linen.blender.path import add_path
 from linen.blender.points import add_points
 from linen.folding.trajectories.circular_fold import circular_arc_position_trajectory
 from linen.path.path import Path
-from synthetic_cloth_data.meshes.cloth_meshes import visualize_keypoints
-from synthetic_cloth_data.meshes.generate_flat_meshes import _unwrap_cloth_mesh
-from synthetic_cloth_data.meshes.mesh_operations import subdivide_mesh
-from synthetic_cloth_data.meshes.projected_mesh_area import get_mesh_projected_xy_area
+from synthetic_cloth_data.meshes.flat_meshes.cloth_meshes import visualize_keypoints
+from synthetic_cloth_data.meshes.flat_meshes.generate_flat_meshes import _unwrap_cloth_mesh
+from synthetic_cloth_data.meshes.utils.mesh_operations import subdivide_mesh
+from synthetic_cloth_data.meshes.utils.projected_mesh_area import get_mesh_projected_xy_area
 
 logger = loguru.logger
 

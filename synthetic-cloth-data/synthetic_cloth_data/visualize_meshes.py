@@ -5,7 +5,7 @@ import bpy
 import numpy as np
 import tqdm
 from airo_blender.materials import add_material
-from synthetic_cloth_data.meshes.cloth_meshes import visualize_keypoints
+from synthetic_cloth_data.meshes.templates.cloth_meshes import visualize_keypoints
 
 
 def visualize_meshes(mesh_dir: str, show_keypoints: bool = False, max_amount_to_visualize: int = 100):

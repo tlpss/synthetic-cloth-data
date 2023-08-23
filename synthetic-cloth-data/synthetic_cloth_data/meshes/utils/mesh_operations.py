@@ -118,7 +118,7 @@ def find_nearest_vertex_ids(vertices: List[np.ndarray], points: List[np.ndarray]
 
 
 def triangulate(blender_object: bpy.types.Object):
-    """triangulate the mesh"""
+    """triangulate a planar mesh (typically a cloth template)"""
     vertices, edges, faces = blender_object.data.vertices, blender_object.data.edges, blender_object.data.polygons
     vertices = np.array([v.co for v in vertices])
     vertices = vertices[:, :2]

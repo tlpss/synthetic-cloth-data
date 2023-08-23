@@ -4,7 +4,7 @@ import pathlib
 import click
 import tqdm
 from synthetic_cloth_data import DATA_DIR
-from synthetic_cloth_data.meshes.pyflex_deformations.pyflex_deform_mesh import generate_deformed_mesh
+from synthetic_cloth_data.meshes.deformations.pyflex_deformations.pyflex_deform_mesh import generate_deformed_mesh
 from synthetic_cloth_data.utils import get_metadata_dict_for_dataset
 
 
@@ -13,7 +13,7 @@ from synthetic_cloth_data.utils import get_metadata_dict_for_dataset
 @click.option("--num-samples", type=int, default=20)
 @click.option("--output-dir", type=str, default="deformed_meshes/TOWEL/pyflex/dev")
 @click.option("--start_id", type=int, default=0)
-def generate_dataset(mesh_dir: str, num_samples: int, output_dir: str, start_id: int):
+def generate_dataset(mesh_dir, num_samples, output_dir, start_id):
 
     # write metadata
     data = {

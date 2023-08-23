@@ -5,8 +5,8 @@ import pathlib
 
 import bpy
 import tqdm
-from synthetic_cloth_data.meshes.cloth_meshes import CLOTH_TYPES, generate_cloth_object
-from synthetic_cloth_data.meshes.projected_mesh_area import get_mesh_projected_xy_area
+from synthetic_cloth_data.meshes.flat_meshes.cloth_meshes import CLOTH_TYPES, generate_cloth_object
+from synthetic_cloth_data.meshes.utils.projected_mesh_area import get_mesh_projected_xy_area
 from synthetic_cloth_data.utils import get_metadata_dict_for_dataset
 
 
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     if "--" in sys.argv:
         argv = sys.argv[sys.argv.index("--") + 1 :]
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cloth_type", type=str, default="TOWEL")
+    parser.add_argument("--cloth_type", type=CLOTH_TYPES, default="TOWEL")
     parser.add_argument("--num_samples", type=int, default=100)
     parser.add_argument("--dataset_tag", type=str, default="dev")
     args = parser.parse_args(argv)

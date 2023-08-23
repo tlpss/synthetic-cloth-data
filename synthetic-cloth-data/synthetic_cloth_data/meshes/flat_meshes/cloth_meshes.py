@@ -6,7 +6,7 @@ import tqdm
 
 print(sys.version)
 import numpy as np
-from synthetic_cloth_data.meshes.geometric_templates import (
+from synthetic_cloth_data.meshes.flat_meshes.geometric_templates import (
     ShortsMeshConfig,
     TowelTemplateConfig,
     TshirtMeshConfig,
@@ -14,7 +14,7 @@ from synthetic_cloth_data.meshes.geometric_templates import (
     create_towel_vertices,
     create_tshirt_vertices,
 )
-from synthetic_cloth_data.meshes.mesh_operations import (
+from synthetic_cloth_data.meshes.utils.mesh_operations import (
     BevelConfig,
     BezierConfig,
     apply_bezier_curves_to_mesh,

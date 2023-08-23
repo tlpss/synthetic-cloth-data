@@ -55,6 +55,6 @@ if __name__ == "__main__":
     import pathlib
 
     filepath = pathlib.Path(__file__).parent
-    filepath = filepath.parents[1] / "data" / "flat_meshes" / "TSHIRT" / "dev" / "000001.obj"
+    filepath = filepath.parents[2] / "data" / "flat_meshes" / "TSHIRT" / "dev" / "000001.obj"
     print(filepath)
     print(get_mesh_projected_xy_area(filepath))

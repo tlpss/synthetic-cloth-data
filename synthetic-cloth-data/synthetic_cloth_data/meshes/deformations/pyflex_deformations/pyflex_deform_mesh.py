@@ -1,5 +1,3 @@
-import json
-
 import loguru
 import numpy as np
 from airo_spatial_algebra.se3 import SE3Container
@@ -12,7 +10,7 @@ from pyflex_utils import (
 )
 from pyflex_utils.utils import create_obj_with_new_vertex_positions, load_cloth_mesh_in_simulator
 from synthetic_cloth_data import DATA_DIR
-from synthetic_cloth_data.meshes.projected_mesh_area import get_mesh_projected_xy_area
+from synthetic_cloth_data.utils import CLOTH_TYPES
 
 import pyflex
 
@@ -20,14 +18,23 @@ logger = loguru.logger
 
 
 class DeformationConfig:
-    max_fold_distance: float = 0.6
+    max_fold_distance: float = 0.6  # should allow to fold the cloth in half
 
-    max_bending_stiffness: float = 0.02
+    max_bending_stiffness: float = 0.02  # higher becomes unrealistic
     max_stretch_stiffness: float = 1.0
-    max_orientation_angle: float = np.pi / 4
+    max_drag: float = 0.002  # higher -> cloth will start to fall down very sloooow
+    max_orientation_angle: float = np.pi / 4  # higher will make the cloth more crumpled
 
     fold_probability: float = 0.6
     flip_probability: float = 0.5
+
+
+class TowelDeformationConfig(DeformationConfig):
+    pass
+
+
+class TshirtDeformationConfig(DeformationConfig):
+    max_orientation_angle = np.pi / 8  # reduce wrinkling for tshirts to make them less crumpled.
 
 
 def deform_mesh(
@@ -40,7 +47,7 @@ def deform_mesh(
     static_friction = np.random.uniform(0.3, 1.0)
     dynamic_friction = np.random.uniform(0.3, 1.0)
     particle_friction = np.random.uniform(0.3, 1.0)
-    drag = np.random.uniform(0.0, 0.002)  # higher -> cloth will start to fall down very sloooow
+    drag = np.random.uniform(0.0, deformation_config.max_drag)
     config = create_pyflex_cloth_scene_config(
         static_friction=static_friction,
         dynamic_friction=dynamic_friction,
@@ -133,7 +140,9 @@ def deform_mesh(
     logger.debug(f"drag: {drag}")
 
 
-def generate_deformed_mesh(mesh_dir_relative_path: str, output_dir_relative_path: str, id: int, debug: bool = False):
+def generate_deformed_mesh(
+    cloth_type: CLOTH_TYPES, mesh_dir_relative_path: str, output_dir_relative_path: str, id: int, debug: bool = False
+):
 
     np.random.seed(id)
     logger.info(f"generating deformation with id {id} using flex")
@@ -148,22 +157,31 @@ def generate_deformed_mesh(mesh_dir_relative_path: str, output_dir_relative_path
     output_path = output_dir_relative_path / filename
 
     # generate deformed mesh
-    deform_mesh(DeformationConfig(), mesh_path, output_path, gui=debug)
 
-    # create json file
-    flat_mesh_data = json.load(open(mesh_path.replace(".obj", ".json")))
-    # write data to json file
-    data = {
-        "keypoint_vertices": flat_mesh_data["keypoint_vertices"],
-        "area": get_mesh_projected_xy_area(output_path),
-        "flat_mesh": {
-            "relative_path": mesh_path.replace(f"{DATA_DIR}/", ""),
-            "obj_md5_hash": flat_mesh_data["obj_md5_hash"],
-            "area": flat_mesh_data["area"],  # duplication, but makes it easier to use later on..
-        },
-    }
-    with open(str(output_path).replace(".obj", ".json"), "w") as f:
-        json.dump(data, f)
+    if cloth_type == CLOTH_TYPES.TOWEL:
+        deformation_config = TowelDeformationConfig()
+
+    elif cloth_type == CLOTH_TYPES.TSHIRT:
+        deformation_config = TshirtDeformationConfig()
+
+    else:
+        raise NotImplementedError(f"deformation for cloth type {cloth_type} not implemented")
+    deform_mesh(deformation_config, mesh_path, output_path, gui=debug)
+
+    # # create json file
+    # flat_mesh_data = json.load(open(mesh_path.replace(".obj", ".json")))
+    # # write data to json file
+    # data = {
+    #     "keypoint_vertices": flat_mesh_data["keypoint_vertices"],
+    #     "area": get_mesh_projected_xy_area(output_path),
+    #     "flat_mesh": {
+    #         "relative_path": mesh_path.replace(f"{DATA_DIR}/", ""),
+    #         "obj_md5_hash": flat_mesh_data["obj_md5_hash"],
+    #         "area": flat_mesh_data["area"],  # duplication, but makes it easier to use later on..
+    #     },
+    # }
+    # with open(str(output_path).replace(".obj", ".json"), "w") as f:
+    #     json.dump(data, f)
 
     logger.info("completed")
 
@@ -178,6 +196,7 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
     argparser.add_argument("--id", type=int, default=17)
     argparser.add_argument("--debug", action="store_true")
+    argparser.add_argument("--cloth_type", type=CLOTH_TYPES, default=CLOTH_TYPES.TOWEL)
     argparser.add_argument("--mesh_dir_relative_path", type=str, default="flat_meshes/TOWEL/dev")
     argparser.add_argument("--output_dir", type=str, default="deformed_meshes/TOWEL/pyflex/dev")
     args = argparser.parse_args()
@@ -186,4 +205,4 @@ if __name__ == "__main__":
         logger.remove()
         logger.add(sys.stderr, level="INFO")
 
-    generate_deformed_mesh(args.mesh_dir_relative_path, args.output_dir, args.id, args.debug)
+    generate_deformed_mesh(args.cloth_type, args.mesh_dir_relative_path, args.output_dir, args.id, args.debug)
