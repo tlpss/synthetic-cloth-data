@@ -170,6 +170,9 @@ def create_pyflex_cloth_scene_config(
         },
         "scene_config": {
             "scene_id": 0,  # the Empty Scene.
+            "particle_radius": 0.015,  # particle radius
+            "collision_distance": 0.0005,  # collision distance between particles and shapes (such as ground surface)
+            "solid_rest_distance": 0.013,  # rest distance for solid particles -> a.o. 'cloth thickness' for self collisions, best close to edge lengths
             "dynamic_friction": dynamic_friction,  # friction between cloth and rigid objects
             "particle_friction": particle_friction,  # friction between cloth particles
             "static_friction": static_friction,  # friction between rigid objects

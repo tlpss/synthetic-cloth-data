@@ -28,7 +28,9 @@ def get_default_config(
             "radius": particle_radius * scale,
             "buoyancy": 0,
             "numExtraParticles": 20000,
-            "collisionDistance": 0.0006,
+            "collision_distance": 0.0006,
+            "particle_radius": 0.004,
+            "solid_rest_distance": 0.004,
             "msaaSamples": 0,
         },
         "flip_mesh": 0,
@@ -40,4 +42,4 @@ def get_default_config(
 if __name__ == "__main__":
     pyflex.init(False, True, 480, 480, 0)
     config = get_default_config()
-    pyflex.set_scene(5, config["scene_config"])
+    pyflex.set_scene(0, config["scene_config"])

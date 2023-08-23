@@ -32,7 +32,7 @@ docker exec -it  <containe-name/ID> bash
 Inside the container, activate your conda environment
 ```
 source <conda-installation-path>/bin/activate
-conda activate <your-env>
+conda activate <path-to-your-env>
 And then install the requirements for
 Then set the required paths with
 ```

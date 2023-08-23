@@ -1,6 +1,6 @@
 # Blender Asset setup
 
-This readme describes how to gather all the assets for the synthetic data generation. It requires a working `airo-blender` setup. 
+This readme describes how to gather all the assets for the synthetic data generation. It requires a working `airo-blender` setup.
 To store all the assets, we recommend to create a `blender-assets` folder somewhere. Make sure you have enough space, as the assets will take 20GB or more.
 
 ## PolyHaven

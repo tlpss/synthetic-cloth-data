@@ -24,9 +24,11 @@ public:
         g_drawSprings = false;
 
         // set default values
-        g_params.radius = 0.0175f;
         g_numExtraParticles = 20000;
-        g_params.collisionDistance = g_params.radius*0.5f;
+
+        g_params.radius = 0.01f; // interaction radius: threshold radius for particle-particle interactions
+        g_params.collisionDistance = 0.003f; // distance for particle/shape collision detection, should be >0 to avoid 'tunneling'
+        g_params.solidRestDistance = 0.01f; // distance between particles in rest, should approx match edge lengths of the cloth mesh and determines 'thickness' as well.
 
         g_numSubsteps = 4;
         g_params.numIterations = 30;
@@ -54,7 +56,19 @@ public:
             if (key == "particle_friction") g_params.particleFriction = std::stof(py::str(item.second));
             if (key == "static_friction") g_params.staticFriction = std::stof(py::str(item.second));
             if (key == "drag") g_params.drag = std::stof(py::str(item.second));
+            if (key == "particle_radius") g_params.radius = std::stof(py::str(item.second));
+            if (key == "collision_distance") g_params.collisionDistance = std::stof(py::str(item.second));
+            if (key == "solid_rest_distance") g_params.solidRestDistance = std::stof(py::str(item.second));
         }
+
+        std::cout << "scene parameters:" << std::endl;
+        std::cout << "g_params.dynamicFriction: " << g_params.dynamicFriction << std::endl;
+        std::cout << "g_params.particleFriction: " << g_params.particleFriction << std::endl;
+        std::cout << "g_params.staticFriction: " << g_params.staticFriction << std::endl;
+        std::cout << "g_params.drag: " << g_params.drag << std::endl;
+        std::cout << "g_params.radius: " << g_params.radius << std::endl;
+        std::cout << "g_params.collisionDistance: " << g_params.collisionDistance << std::endl;
+        std::cout << "g_params.solidRestDistance: " << g_params.solidRestDistance << std::endl;
 
 
 

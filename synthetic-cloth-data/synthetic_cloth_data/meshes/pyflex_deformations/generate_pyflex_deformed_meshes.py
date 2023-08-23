@@ -27,7 +27,7 @@ def generate_dataset(mesh_dir: str, num_samples: int, output_dir: str, start_id:
     json.dump(data, open(metadata_path, "w"))
     print(f"Metadata written to {metadata_path}")
 
-    for id in tqdm.tqdm(range(start_id,start_id+num_samples)):
+    for id in tqdm.tqdm(range(start_id, start_id + num_samples)):
         generate_deformed_mesh(mesh_dir, output_dir, id, debug=False)
 
 
