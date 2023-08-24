@@ -1,6 +1,6 @@
 """Script that creates a blend file and loads all the Google Scanned Objects as blender assets.
 
-run using python <script> --path <path-to-google-scanned-objects-directory>
+run using blender -b -P <script> -- --path <path-to-google-scanned-objects-directory>
 
 save this blend file in your asset directory and add it in Blender as an asset library.
 """
@@ -69,7 +69,8 @@ def move_texture_png(model_directory):
     texture_path = os.path.join(model_directory, "materials", "textures", "texture.png")
     texture_destination_path = os.path.join(model_directory, "meshes", "texture.png")
     if not os.path.exists(texture_destination_path):
-        shutil.move(texture_path, texture_destination_path)
+        # copy instead of move so that the original directory is not modified
+        shutil.copy(texture_path, texture_destination_path)
 
 
 def load_gso_model(model_directory):
@@ -142,4 +143,14 @@ if __name__ == "__main__":
         print(f"Please download the GSO models to {gso_directory}")
         exit()
 
-    all_gso_downloads_to_assets(gso_directory)
+    # all_gso_downloads_to_assets(gso_directory)
+
+    blend_file_path = os.path.join(gso_directory, "GSO.blend")
+    # bpy.ops.wm.save_as_mainfile(filepath=blend_file_path)
+
+    bpy.ops.preferences.asset_library_add(directory=gso_directory)
+    new_library = bpy.context.preferences.filepaths.asset_libraries[-1]
+    new_library.name = "Google Scanned Objects"
+    bpy.ops.wm.save_userpref()
+
+    print("done")

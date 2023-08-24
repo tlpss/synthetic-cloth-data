@@ -9,4 +9,4 @@ id: 5
 relative_dataset_path: synthetic_images/TOWEL/00
 
 cloth_mesh:
-  mesh_path: deformed_meshes/TOWEL/00
+  mesh_path: deformed_meshes/TOWEL/pyflex/00

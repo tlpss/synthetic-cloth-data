@@ -40,6 +40,6 @@ def get_default_config(
 
 
 if __name__ == "__main__":
-    pyflex.init(False, True, 480, 480, 0)
+    pyflex.init(True, False, 480, 480, 0)
     config = get_default_config()
     pyflex.set_scene(0, config["scene_config"])
