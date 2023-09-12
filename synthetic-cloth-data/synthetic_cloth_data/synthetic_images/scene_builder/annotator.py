@@ -43,6 +43,15 @@ def create_coco_annotations(
     camera = bpy.context.scene.camera
     keypoints_2D = [world_to_camera_view(scene, camera, corner) for corner in keypoints_3D]
 
+    # check if cloth object has a solidify modifier and remove it temporarily because it affects the ray cast and hence the visibility check.
+    solidify_modifier = None
+    is_solidify_modifier = [modifier.type == "SOLIDIFY" for modifier in cloth_object.modifiers]
+    if any(is_solidify_modifier):
+        solidify_modifier = cloth_object.modifiers[is_solidify_modifier.index(True)]
+        solidifier_thickness = solidify_modifier.thickness
+        solidify_modifier.thickness = 0.0
+
+    # gather the keypoints
     coco_keypoints = []
     num_labeled_keypoints = 0
     for keypoint_3D, keypoint_2D in zip(keypoints_3D, keypoints_2D):
@@ -50,14 +59,10 @@ def create_coco_annotations(
         px = image_width * u
         py = image_height * (1.0 - v)
 
-        # the helper cube scale is set here to be sligthly larger than the solidify modifier thickness
-        # to make sure that the ray cast will hit the vertex and not the solidify modifier, which would make the keypoint invisible.
-        # this is slightly hacky, as it would lead to visible keypoints through a thin surface that is next to the cloth.
-        # It is not an issue for self-collisions though, as the rest distance of the cloth is assumed to be >1cm.
-        visible_flag = 1 if is_vertex_occluded_for_scene_camera(keypoint_3D, helper_cube_scale=0.001001) else 2
-        print(f"{keypoint_3D}-> visible_flag: {visible_flag}")
+        visible_flag = 1 if is_vertex_occluded_for_scene_camera(keypoint_3D) else 2
+        print(f"{keypoint_3D} -> visible_flag: {visible_flag}")
 
-        # Currently we set keypoints outside the image to be "not labeled"
+        # we set keypoints outside the image to be "not labeled"
         if px < 0 or py < 0 or px > image_width or py > image_height:
             visible_flag = 0
             px = 0.0
@@ -67,6 +72,10 @@ def create_coco_annotations(
             num_labeled_keypoints += 1
 
         coco_keypoints += (px, py, visible_flag)
+
+    # add the solidifier back if required
+    if solidify_modifier is not None:
+        solidify_modifier.thickness = solidifier_thickness
 
     category_id = CLOTH_TYPE_TO_COCO_CATEGORY_ID[cloth_type.name]
     annotation = CocoKeypointAnnotation(
