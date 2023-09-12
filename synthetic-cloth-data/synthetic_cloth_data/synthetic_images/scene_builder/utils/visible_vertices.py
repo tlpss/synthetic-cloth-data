@@ -3,6 +3,8 @@ import bpy
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
 
+DEBUG = False
+
 
 def is_vertex_occluded_for_scene_camera(co: Vector, helper_cube_scale: float = 0.0001) -> bool:
     """Checks if a vertex is occluded by objects in the scene w.r.t. the camera.
@@ -31,8 +33,15 @@ def is_vertex_occluded_for_scene_camera(co: Vector, helper_cube_scale: float = 0
         direction=direction,
     )
 
+    if DEBUG:
+        print(f"hit location: {location}")
+        bpy.ops.mesh.primitive_ico_sphere_add(
+            location=location, scale=(helper_cube_scale, helper_cube_scale, helper_cube_scale)
+        )
+
     # remove the auxiliary cube
-    bpy.data.objects.remove(cube, do_unlink=True)
+    if not DEBUG:
+        bpy.data.objects.remove(cube, do_unlink=True)
 
     if not hit:
         raise ValueError("No hit found, this should not happen as the ray should always hit the vertex itself.")
