@@ -49,10 +49,12 @@ def create_coco_annotations(
         u, v, _ = keypoint_2D
         px = image_width * u
         py = image_height * (1.0 - v)
-        # TODO: this won't work in combination with the blender soldify modifier as it can make the vertices occluded even though the keypoint is visible.
-        # possible solution: check the N-neighbors of the vertex and see if any of them are not occluded.
-        # this makes it dependent on the mesh resolution, but that is something I can live with for now.
-        visible_flag = 1 if is_vertex_occluded_for_scene_camera(keypoint_3D) else 2
+
+        # the helper cube scale is set here to be sligthly larger than the solidify modifier thickness
+        # to make sure that the ray cast will hit the vertex and not the solidify modifier, which would make the keypoint invisible.
+        # this is slightly hacky, as it would lead to visible keypoints through a thin surface that is next to the cloth.
+        # It is not an issue for self-collisions though, as the rest distance of the cloth is assumed to be >1cm.
+        visible_flag = 1 if is_vertex_occluded_for_scene_camera(keypoint_3D, helper_cube_scale=0.001001) else 2
         print(f"{keypoint_3D}-> visible_flag: {visible_flag}")
 
         # Currently we set keypoints outside the image to be "not labeled"

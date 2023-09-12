@@ -4,7 +4,7 @@ from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
 
 
-def is_vertex_occluded_for_scene_camera(co: Vector) -> bool:
+def is_vertex_occluded_for_scene_camera(co: Vector, helper_cube_scale: float = 0.0001) -> bool:
     """Checks if a vertex is occluded by objects in the scene w.r.t. the camera.
 
     Args:
@@ -22,8 +22,7 @@ def is_vertex_occluded_for_scene_camera(co: Vector) -> bool:
     # add small cube around coord to make sure the ray will intersect
     # as the ray_cast is not always accurate
     # cf https://blender.stackexchange.com/a/87755
-    scale = 0.00001
-    bpy.ops.mesh.primitive_cube_add(location=co, scale=(scale, scale, scale))
+    bpy.ops.mesh.primitive_cube_add(location=co, scale=(helper_cube_scale, helper_cube_scale, helper_cube_scale))
     cube = bpy.context.object
     direction = co - camera_obj.location
     hit, location, _, _, _, _ = scene.ray_cast(
@@ -38,7 +37,7 @@ def is_vertex_occluded_for_scene_camera(co: Vector) -> bool:
     if not hit:
         raise ValueError("No hit found, this should not happen as the ray should always hit the vertex itself.")
     # if the hit is the vertex itself, it is not occluded
-    if (location - co).length < scale * 2:
+    if (location - co).length < helper_cube_scale * 2:
         return False
     return True
 

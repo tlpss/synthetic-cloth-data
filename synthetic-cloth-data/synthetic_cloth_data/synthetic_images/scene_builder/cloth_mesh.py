@@ -14,6 +14,8 @@ from synthetic_cloth_data import DATA_DIR
 @dataclasses.dataclass
 class ClothMeshConfig:
     mesh_path: str
+
+    solidify: bool = True
     xy_randomization_range: float = 0.1
     mesh_dir: List[str] = dataclasses.field(init=False)
 
@@ -30,6 +32,9 @@ def load_cloth_mesh(config: ClothMeshConfig):
     mesh_file = str(np.random.choice(config.mesh_dir))
     bpy.ops.import_scene.obj(filepath=mesh_file, split_mode="OFF")  # keep vertex order with split_mode="OFF"
     cloth_object = bpy.context.selected_objects[0]
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = cloth_object
+    cloth_object.select_set(True)
     # randomize position & orientation
     xy_position = np.random.uniform(-config.xy_randomization_range, config.xy_randomization_range, size=2)
     cloth_object.location[0] = xy_position[0]
@@ -44,7 +49,21 @@ def load_cloth_mesh(config: ClothMeshConfig):
     # make sure the cloth is a little above the surface for rendering purposes
     cloth_object.location[2] += 0.0001
 
+    # randomize orientation
     cloth_object.rotation_euler[2] = np.random.rand() * 2 * np.pi
+
+    if config.solidify:
+
+        # note that this has impacts on the visibility of the keypoints
+        # as these are now inside the mesh. Need to either test for 1-ring neighbours or make sure that the auxiliary cubes around a vertex
+        # in the visibility check are larger than the solidify modifier thickness. The latter is what we do by default, since the rest distance of the cloth meshes
+        # is assumed to be > 1cm.
+        cloth_object.location[2] += 0.001  # offset for solidify modifier
+        # solidify the mesh to give the cloth some thickness.
+        bpy.ops.object.modifier_add(type="SOLIDIFY")
+        # 2 mm, make sure the particle radius of the cloth simulator is larger than this!
+        bpy.context.object.modifiers["Solidify"].thickness = 0.002  # 2 mm cloth thickness.
+        bpy.context.object.modifiers["Solidify"].offset = 0.0  # center the thickness around the original mesh
 
     # convention is to have the keypoint vertex ids in a json file with the same name as the obj file
     keypoint_vertex_dict = json.load(open(str(mesh_file).replace(".obj", ".json")))["keypoint_vertices"]
