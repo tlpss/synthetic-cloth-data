@@ -3,11 +3,11 @@ import dataclasses
 import airo_blender as ab
 import bpy
 import numpy as np
-from mathutils import Vector
 from synthetic_cloth_data.synthetic_images.assets.asset_snapshot_paths import (
     GOOGLE_SCANNED_OBJECTS_ASSETS_SNAPSHOT_RELATIVE_PATH,
 )
 from synthetic_cloth_data.synthetic_images.scene_builder.utils.assets import AssetConfig
+from synthetic_cloth_data.synthetic_images.scene_builder.utils.collisions import are_object_bboxes_in_collision
 
 
 @dataclasses.dataclass
@@ -19,7 +19,7 @@ class DistractorConfig(AssetConfig):
 def add_distractors_to_scene(
     distractor_config: DistractorConfig, cloth_object: bpy.types.Object, surface_object: bpy.types.Object
 ):
-    """adds a number of distractors on the cloth surface
+    """adds a number of distractors on the table surface
     and makes sure they do not intersect with the cloth (though they could occlude keypoints of the cloth).)"""
 
     plane_x_size, plane_y_size = surface_object.dimensions[0], surface_object.dimensions[1]
@@ -31,13 +31,6 @@ def add_distractors_to_scene(
         surface_object.location[1] - plane_y_size / 2,
         surface_object.location[1] + plane_y_size / 2,
     )
-
-    cloth_bbox = cloth_object.bound_box
-    cloth_bbox = [cloth_object.matrix_world @ Vector(corner) for corner in cloth_bbox]
-    cloth_x_min = min([corner[0] for corner in cloth_bbox])
-    cloth_x_max = max([corner[0] for corner in cloth_bbox])
-    cloth_y_min = min([corner[1] for corner in cloth_bbox])
-    cloth_y_max = max([corner[1] for corner in cloth_bbox])
 
     border_delta = 0.05
 
@@ -54,23 +47,26 @@ def add_distractors_to_scene(
         # simple distractor placement
 
         # we only check with the axis-aligned bounding box of the cloth for simplicity.
-        # in teory we should also check if there are no collisions between the distractors
+        # in theory we should also check if there are no collisions between the distractors
         # assuming this does not matter too much for the representation learning task
 
-        for _ in range(10):  # try 10 times to place the distractor, otherwise give up
+        for _ in range(20):  # try 10 times to place the distractor, otherwise give up
             x = np.random.uniform(plane_x_min + border_delta, plane_x_max - border_delta)
             y = np.random.uniform(plane_y_min + border_delta, plane_y_max - border_delta)
             z = 0.001  # make sure the distractor is above the surface
-
+            distractor.location[0] = x
+            distractor.location[1] = y
+            distractor.location[2] = z
+            # apply the location
+            bpy.context.view_layer.update()
             # check if the distractor is inside the cloth bbox
-            if x > cloth_x_min and x < cloth_x_max and y > cloth_y_min and y < cloth_y_max:
-                # sample new points.
+            if are_object_bboxes_in_collision(distractor, cloth_object):
                 continue
             else:
                 break
-
-        distractor.location[0] = x
-        distractor.location[1] = y
-        distractor.location[2] = z
+        if are_object_bboxes_in_collision(distractor, cloth_object):
+            print("Warning: could not place distractor without collision with cloth")
+            # remove the distractor
+            bpy.context.scene.collection.objects.unlink(distractor)
 
     return distractor_objects
