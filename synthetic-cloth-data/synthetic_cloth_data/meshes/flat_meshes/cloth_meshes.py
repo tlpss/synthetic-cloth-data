@@ -130,21 +130,21 @@ def sample_tshirt_bezier_config() -> BezierConfig:
 def sample_towel_bevel_configs(keypoint_ids: List[int]):
     bevel_configs = []
     for id in keypoint_ids:
-        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.03)))
+        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.015)))
     return bevel_configs
 
 
 def sample_shorts_bevel_configs(keypoint_ids: List[int]):
     bevel_configs = []
     for id in keypoint_ids:
-        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.03)))
+        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.015)))
     return bevel_configs
 
 
 def sample_tshirt_bevel_configs(keypoint_ids: List[int]):
     bevel_configs = []
     for id in keypoint_ids:
-        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.03)))
+        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.015)))
     return bevel_configs
 
 
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     add_material(plane, (1, 0.5, 0.5, 1.0))
 
     for idx in tqdm.trange(10):
-        ob, kp = generate_cloth_object(CLOTH_TYPES.TSHIRT)
+        ob, kp = generate_cloth_object(CLOTH_TYPES.TOWEL)
         # attach_cloth_sim(ob)
         ob.location = np.array([idx % 10, idx // 10, 0.001])
         # update the object's world matrix
@@ -239,4 +239,4 @@ if __name__ == "__main__":
         # bpy.data.scenes["Scene"].frame_start = 0
         # for i in tqdm.trange(50):
         #     bpy.context.scene.frame_set(i)
-        visualize_keypoints(ob, list(kp.values()))
+        # visualize_keypoints(ob, list(kp.values()))
