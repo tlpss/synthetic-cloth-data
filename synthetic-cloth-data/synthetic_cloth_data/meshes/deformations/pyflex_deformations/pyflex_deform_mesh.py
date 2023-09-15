@@ -181,6 +181,7 @@ def generate_deformed_mesh(
 
 if __name__ == "__main__":
     import hydra
+    import tqdm
     from omegaconf import DictConfig, OmegaConf
 
     @hydra.main(config_path="configs", config_name="config")
@@ -202,7 +203,7 @@ if __name__ == "__main__":
 
         deformation_config = hydra.utils.instantiate(cfg["deformation_config"])
         print(deformation_config)
-        for id in range(cfg.start_id, cfg.start_id + cfg.num_samples):
+        for id in tqdm.trange(cfg.start_id, cfg.start_id + cfg.num_samples):
             generate_deformed_mesh(deformation_config, cfg.mesh_dir, cfg.output_dir, id, debug=cfg.debug)
 
     generate_deformed_meshes()
