@@ -1,5 +1,7 @@
-"""utils for checking collisions between objects
-adapted from BlenderProc: https://github.com/DLR-RM/BlenderProc/blob/main/blenderproc/python/utility/CollisionUtility.py"""
+"""
+utils for checking collisions between objects
+adapted from BlenderProc: https://github.com/DLR-RM/BlenderProc/blob/main/blenderproc/python/utility/CollisionUtility.py
+"""
 
 from typing import Callable, List
 
