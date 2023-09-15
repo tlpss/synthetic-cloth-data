@@ -51,6 +51,9 @@ class ClothParticleSystem:
         pyflex_masses[: self.n_particles, 3] = masses
         pyflex.set_positions(pyflex_masses.flatten())
 
+    def get_center_of_mass(self):
+        return np.mean(self.get_positions(), axis=0)
+
     def center_object(self):
         pos = self.get_positions()
         mid_x = (np.max(pos[:, 0]) + np.min(pos[:, 0])) / 2
@@ -137,7 +140,7 @@ class ParticleGrasper:
         line = line / np.linalg.norm(line)
         line = -line  # the rotation vector is in the opposite direction of the cross product
 
-        n_steps = int(angle / np.pi * 10)
+        n_steps = int(angle / np.pi * 20)
 
         for i in range(n_steps + 1):
             rotation_matrix = SE3Container.from_rotation_vector_and_translation(
