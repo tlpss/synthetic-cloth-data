@@ -33,7 +33,7 @@ class DeformationConfig:
     max_orientation_angle: float = np.pi / 4  # higher will make the cloth more crumpled
 
     fold_probability: float = 0.6
-    grasp_keypoint_vertex_probability = 0.5
+    grasp_keypoint_vertex_probability: float = 0.5
     flip_probability: float = 0.5
 
 
@@ -116,9 +116,10 @@ def deform_mesh(
         cloth_center = cloth_system.get_center_of_mass()
         vertex_position = cloth_system.get_positions()[grasp_particle_idx]
         center_direction = np.arctan2(cloth_center[2] - vertex_position[2], cloth_center[0] - vertex_position[0])
-        fold_direction = np.random.normal(center_direction, np.pi / 2)
 
-        # fold_direction = np.random.uniform(0.0, 2 * np.pi)
+        # 70% of time wihtin pi/3 of the center direction. folds outside of the mesh are less interesting.
+        fold_direction = np.random.normal(center_direction, np.pi / 3)
+
         fold_vector = np.array([np.cos(fold_direction), 0, np.sin(fold_direction)]) * fold_distance
         logger.debug(f"fold vector: {fold_vector}")
 
