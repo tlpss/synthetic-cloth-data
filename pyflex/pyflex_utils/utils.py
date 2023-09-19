@@ -289,7 +289,9 @@ def load_cloth_mesh_in_simulator(
 
 def create_obj_with_new_vertex_positions(positions: np.ndarray, obj_path: str, target_obj_path: str):
     """Creates a new obj mesh by replacing the positions of the vertices in the original obj mesh. The order positions must match the order of the vertices in the original mesh."""
-    mesh = trimesh.load(obj_path, process=False, maintain_order=True)  # keep order!
+    # allow order change for faces to avoid artifacts in the texture coordinates
+    # this should not influence the vertex positions.
+    mesh = trimesh.load(obj_path, process=False, maintain_order=False)
     assert len(mesh.vertices) == len(
         positions
     ), "Cannot update positions if the number of vertices does not match the number of positions!"
@@ -301,7 +303,7 @@ def create_obj_with_new_vertex_positions(positions: np.ndarray, obj_path: str, t
     obj_string = export_obj(mesh, include_texture=True)
     # remove second and third line from obj string
     # which corresponds to the material
-    obj_string = "\n".join(obj_string.split("\n")[2:])
+    obj_string = "\n".join(obj_string.split("\n")[3:])
     with open(target_obj_path, "w") as f:
         f.write(obj_string)
 
