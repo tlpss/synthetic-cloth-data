@@ -16,6 +16,7 @@ class ClothMeshConfig:
     mesh_path: str
 
     solidify: bool = True
+    use_subdivision_modifier: bool = True
     xy_randomization_range: float = 0.1
     mesh_dir: List[str] = dataclasses.field(init=False)
 
@@ -52,6 +53,11 @@ def load_cloth_mesh(config: ClothMeshConfig):
     # randomize orientation
     cloth_object.rotation_euler[2] = np.random.rand() * 2 * np.pi
 
+    if config.use_subdivision_modifier:
+        # use modifier instead of operator as it is more powerful.
+        bpy.ops.object.modifier_add(type="SUBSURF")
+        bpy.context.object.modifiers["Subdivision"].render_levels = 2
+
     if config.solidify:
         thickness = 0.001  # 2 mm cloth thickness.
         # note that this has impacts on the visibility of the keypoints
@@ -65,6 +71,5 @@ def load_cloth_mesh(config: ClothMeshConfig):
         bpy.context.object.modifiers["Solidify"].thickness = thickness
         bpy.context.object.modifiers["Solidify"].offset = 0.0  # center the thickness around the original mesh
 
-    # convention is to have the keypoint vertex ids in a json file with the same name as the obj file
     keypoint_vertex_dict = json.load(open(str(mesh_file).replace(".obj", ".json")))["keypoint_vertices"]
     return cloth_object, keypoint_vertex_dict
