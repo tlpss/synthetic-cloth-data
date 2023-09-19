@@ -39,7 +39,7 @@ def _add_material_to_towel_mesh(config: TowelMaterialConfig, cloth_object: bpy.t
         material = create_evenly_colored_material(rgba)
 
     elif material_sample < config.uniform_color_probability + config.striped_probability:
-        amount_of_stripes = np.random.randint(1, 8)
+        amount_of_stripes = np.random.randint(2, 20)
         relative_stripe_width = np.random.uniform(0.1, 0.5)
         stripe_color = hsv_to_rgb(sample_hsv_color())
         background_color = hsv_to_rgb(sample_hsv_color())
@@ -64,8 +64,8 @@ def _add_material_to_towel_mesh(config: TowelMaterialConfig, cloth_object: bpy.t
         horizontal_color = np.array([*horizontal_color, 1])
         intersection_color = np.array([*intersection_color, 1])
 
-        n_vertical_stripes = np.random.randint(1, 8)
-        n_horizontal_stripes = np.random.randint(1, 8)
+        n_vertical_stripes = np.random.randint(2, 20)
+        n_horizontal_stripes = np.random.randint(2, 20)
         vertical_stripe_relative_width = np.random.uniform(0.05, 0.5)
         horizontal_stripe_relative_width = np.random.uniform(0.05, 0.5)
 
