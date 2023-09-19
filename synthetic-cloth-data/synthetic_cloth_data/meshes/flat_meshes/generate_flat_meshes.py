@@ -52,6 +52,7 @@ def generate_dataset(cloth_type: CLOTH_TYPES, num_samples: int, output_dir: str,
             use_selection=True,
             use_materials=False,
             keep_vertex_order=True,  # important for keypoints
+            use_normals=False,  # don't save because these will change during deformations.
             check_existing=False,
             use_uvs=True,  # save UV mappings
         )
