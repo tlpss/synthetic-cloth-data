@@ -78,21 +78,26 @@ def deform_mesh(
     inverse_masses = 1.0 / masses
     cloth_system.set_masses(inverse_masses)
 
-    # randomize orientation & flip w/ 50% probability before folding
+    # separate the rotations, otherwise the y-rotation will be applied before the Z-rotation
+    # which can increase the angle of the Z-rotation and thus make the cloth more crumpled
     rotation_matrix = SE3Container.from_euler_angles_and_translation(
         np.array(
             [
                 np.random.uniform(0, deformation_config.max_orientation_angle),
-                np.random.uniform(0, 2 * np.pi),
+                0,
                 np.random.uniform(0, deformation_config.max_orientation_angle),
             ]
         )
     ).rotation_matrix
-    cloth_system.set_positions(cloth_system.get_positions() @ rotation_matrix)
+
+    y_rotation_matrix = SE3Container.from_euler_angles_and_translation(
+        np.array([0, np.random.uniform(0, 2 * np.pi), 0])
+    ).rotation_matrix
+
+    cloth_system.set_positions(cloth_system.get_positions() @ rotation_matrix @ y_rotation_matrix)
     cloth_system.center_object()
 
     # drop mesh
-
     # tolerance empirically determined
     wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper, max_steps=200, tolerance=0.08)
 
