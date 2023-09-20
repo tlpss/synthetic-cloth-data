@@ -44,7 +44,7 @@ def add_cloth_surface_to_scene(config: SurfaceConfig) -> bpy.types.Object:
         hue = np.random.uniform(0, 1)
         saturation = np.random.uniform(0.0, 0.5)
         value = 1.0
-        base_hsv = (hue, saturation, value)
+        base_hsv = np.array([hue, saturation, value])
         base_rgb = hsv_to_rgb(base_hsv)
 
         multiply_node = material.node_tree.nodes.new("ShaderNodeMixRGB")
