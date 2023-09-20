@@ -78,13 +78,13 @@ def load_cloth_mesh(config: ClothMeshConfig):
         # higher subdivision -> more expensive rendering, so have to find lowest amount that is still good enough
         # also influenced by rendering resolution ofc.
 
-        bpy.ops.object.modifier_add(type="SUBSURF")
-        bpy.context.object.modifiers["Subdivision"].render_levels = 2
-        bpy.context.object.modifiers["Subdivision"].use_limit_surface = False
+        # bpy.ops.object.modifier_add(type="SUBSURF")
+        # bpy.context.object.modifiers["Subdivision"].render_levels = 2
+        # bpy.context.object.modifiers["Subdivision"].use_limit_surface = False
 
-        # bpy.ops.object.mode_set(mode="EDIT")
-        # bpy.ops.mesh.subdivide(smoothness=1,number_cuts=1)
-        # bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.subdivide(smoothness=1, number_cuts=1)
+        bpy.ops.object.mode_set(mode="OBJECT")
 
     keypoint_vertex_dict = json.load(open(str(mesh_file).replace(".obj", ".json")))["keypoint_vertices"]
     return cloth_object, keypoint_vertex_dict
