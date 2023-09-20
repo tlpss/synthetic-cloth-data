@@ -96,7 +96,7 @@ def add_image_to_material_base_color(
 def modify_bsdf_to_cloth(material: bpy.types.Material) -> bpy.types.Material:
     bsdf_node = material.node_tree.nodes["Principled BSDF"]
 
-    # Sheen was made for a cloth looks, and dish towel fabric is generally not shiny at all.
+    # Sheen was made for a cloth looks, and fabric is generally not shiny at all.
     bsdf_node.inputs["Sheen"].default_value = 1.0
     bsdf_node.inputs["Roughness"].default_value = 1.0
 
@@ -194,4 +194,143 @@ def create_striped_material(
     colored_stripes = mix.outputs[2]
 
     links.new(colored_stripes, nodes["Principled BSDF"].inputs["Base Color"])
+    return material
+
+
+def does_bsdf_have_normal_input(material: bpy.types.Material) -> bool:
+    return len(material.node_tree.nodes["Principled BSDF"].inputs["Normal"].links) > 0
+
+
+def _add_noise_texture_to_bsdf_normals(material: bpy.types.Material, scale, bump_strength) -> bpy.types.Material:
+    node_tree = material.node_tree
+    nodes = node_tree.nodes
+    links = node_tree.links
+
+    bsdf_node = nodes["Principled BSDF"]
+
+    normal_input_node = None
+    normal_input_node_socket = None
+    if does_bsdf_have_normal_input(material):
+        print("BSDF has normal input")
+        normal_input_node = bsdf_node.inputs["Normal"].links[0].from_node
+        normal_input_node_socket = bsdf_node.inputs["Normal"].links[0].from_socket.identifier
+
+    # First set up the texture coordinate node for access to the UVs
+    texture_coordinates = nodes.new(type="ShaderNodeTexCoord")
+    texture_mapping_node = nodes.new(type="ShaderNodeMapping")
+
+    # Connect the texture coordinate node to the separate XYZ node
+    links.new(texture_coordinates.outputs["UV"], texture_mapping_node.inputs["Vector"])
+
+    noise_node = nodes.new(type="ShaderNodeTexNoise")
+    noise_node.inputs["Scale"].default_value = scale
+    links.new(texture_mapping_node.outputs["Vector"], noise_node.inputs["Vector"])
+
+    bump_node = nodes.new(type="ShaderNodeBump")
+    bump_node.inputs["Strength"].default_value = bump_strength
+    links.new(bump_node.inputs["Height"], noise_node.outputs["Fac"])
+
+    if normal_input_node:
+        links.new(bump_node.inputs["Normal"], normal_input_node.outputs[normal_input_node_socket])
+
+    links.new(bump_node.outputs["Normal"], bsdf_node.inputs["Normal"])
+    return material
+
+
+def add_xy_wave_pattern_to_bsdf_normals(
+    material: bpy.types.Material, wave_scale: float, wave_distortion: float, bump_strength: float
+) -> bpy.types.Material:
+    node_tree = material.node_tree
+    nodes = node_tree.nodes
+    links = node_tree.links
+
+    bsdf_node = nodes["Principled BSDF"]
+
+    normal_input_node = None
+    normal_input_node_socket = None
+    if does_bsdf_have_normal_input(material):
+        print("BSDF has normal input")
+        normal_input_node = bsdf_node.inputs["Normal"].links[0].from_node
+        normal_input_node_socket = bsdf_node.inputs["Normal"].links[0].from_socket.identifier
+
+    # First set up the texture coordinate node for access to the UVs
+    texture_coordinates = nodes.new(type="ShaderNodeTexCoord")
+    texture_mapping_node = nodes.new(type="ShaderNodeMapping")
+
+    # Connect the texture coordinate node to the separate XYZ node
+    links.new(texture_coordinates.outputs["UV"], texture_mapping_node.inputs["Vector"])
+
+    x_wave_node = nodes.new(type="ShaderNodeTexWave")
+    x_wave_node.inputs["Scale"].default_value = wave_scale
+    x_wave_node.inputs["Distortion"].default_value = wave_distortion
+    links.new(texture_mapping_node.outputs["Vector"], x_wave_node.inputs["Vector"])
+
+    y_wave_node = nodes.new(type="ShaderNodeTexWave")
+    y_wave_node.inputs["Scale"].default_value = wave_scale
+    y_wave_node.inputs["Distortion"].default_value = wave_distortion
+    y_wave_node.bands_direction = "Y"
+    links.new(texture_mapping_node.outputs["Vector"], y_wave_node.inputs["Vector"])
+
+    color_mixer = nodes.new(type="ShaderNodeMixRGB")
+    color_mixer.blend_type = "MIX"
+    color_mixer.inputs["Fac"].default_value = 0.5
+    links.new(x_wave_node.outputs["Color"], color_mixer.inputs["Color1"])
+    links.new(y_wave_node.outputs["Color"], color_mixer.inputs["Color2"])
+
+    color_ramp_node = nodes.new(type="ShaderNodeValToRGB")
+    color_ramp_node.color_ramp.elements[0].position = 0.2
+    links.new(color_mixer.outputs["Color"], color_ramp_node.inputs["Fac"])
+
+    bump_node = nodes.new(type="ShaderNodeBump")
+    bump_node.inputs["Strength"].default_value = bump_strength
+    links.new(bump_node.inputs["Height"], color_ramp_node.outputs["Color"])
+    if normal_input_node:
+        links.new(bump_node.inputs["Normal"], normal_input_node.outputs[normal_input_node_socket])
+
+    links.new(bump_node.outputs["Normal"], bsdf_node.inputs["Normal"])
+
+    return material
+
+
+def add_normals_to_base_color_of_bsdf(material: bpy.types.Material) -> bpy.types.Material:
+    # TODO: take the normal input from the bsdf and add it to the base color by multiplying it with the base color input node with a small factor.
+    return material
+
+
+@dataclasses.dataclass
+class FabricMaterialConfig:
+    wave_scale: float = 200
+    wave_distortion: float = 1.0
+    wave_strength: float = 0.3
+    low_frequency_noise_scale: float = 30
+    low_frequency_noise_strength: float = 0.15
+    high_frequency_noise_scale: float = 200
+    high_frequency_noise_strength: float = 0.2
+
+
+def add_fabric_material_to_bsdf(material: bpy.types.Material, config: FabricMaterialConfig) -> bpy.types.Material:
+    """modifies the BSDF to create fabric-like material for the given base-color pattern.
+    uses wave pattern and both low and high-freq noise textures
+
+    mainly inspired by https://www.youtube.com/watch?v=umrARvXC_MI&t=656s.
+    """
+
+    # This only modifies the normals.
+    # The displacements are not used, because they are more expensive whilst the added realism won't even show at 512x512.
+    # Additionally,  I don't need the 'physical displacements' so I can just use the normals?
+
+    # add low-freq noise to create some additional wrinkles etc
+    material = _add_noise_texture_to_bsdf_normals(
+        material, config.low_frequency_noise_scale, config.low_frequency_noise_strength
+    )
+    # add high-freq noise to mimick 'rag-like' fabric patterns
+    material = _add_noise_texture_to_bsdf_normals(
+        material, config.high_frequency_noise_scale, config.high_frequency_noise_strength
+    )
+
+    # add wave pattern to mimick 'grid-like' fabric patterns
+    material = add_xy_wave_pattern_to_bsdf_normals(
+        material, config.wave_scale, config.wave_distortion, config.wave_strength
+    )
+
     return material

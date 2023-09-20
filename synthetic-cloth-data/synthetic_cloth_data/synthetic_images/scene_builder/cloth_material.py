@@ -2,7 +2,11 @@ import dataclasses
 
 import bpy
 import numpy as np
-from synthetic_cloth_data.materials.common import create_evenly_colored_material
+from synthetic_cloth_data.materials.common import (
+    FabricMaterialConfig,
+    add_fabric_material_to_bsdf,
+    create_evenly_colored_material,
+)
 from synthetic_cloth_data.materials.towels import (
     create_gridded_dish_towel_material,
     create_striped_material,
@@ -79,4 +83,14 @@ def _add_material_to_towel_mesh(config: TowelMaterialConfig, cloth_object: bpy.t
             intersection_color,
         )
     material = modify_bsdf_to_cloth(material)
+
+    # these are manually tuned to provide appropriate noise levels
+    fabric_material_config = FabricMaterialConfig()
+    fabric_material_config.high_frequency_noise_strength = np.random.uniform(0.1, 0.4)
+    fabric_material_config.low_frequency_noise_strength = np.random.uniform(0.02, 0.15)
+    fabric_material_config.high_frequency_noise_scale = np.random.uniform(200, 400)
+    fabric_material_config.low_frequency_noise_scale = np.random.uniform(10, 30)
+    fabric_material_config.wave_strength = np.random.uniform(0.0, 0.4)
+    fabric_material_config.wave_scale = np.random.uniform(50, 150)
+    material = add_fabric_material_to_bsdf(material, fabric_material_config)
     cloth_object.data.materials[0] = material

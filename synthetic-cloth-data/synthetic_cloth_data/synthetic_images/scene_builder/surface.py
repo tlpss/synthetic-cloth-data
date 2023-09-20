@@ -42,7 +42,7 @@ def add_cloth_surface_to_scene(config: SurfaceConfig) -> bpy.types.Object:
         # colors should be close to (1,1,1) to avoid darkening the material too much (this is the issue with multiplying..)
         # so set value to 1 and keep saturation low.
         hue = np.random.uniform(0, 1)
-        saturation = np.random.uniform(0.0, 0.5)
+        saturation = np.random.uniform(0.0, 0.7)
         value = 1.0
         base_hsv = np.array([hue, saturation, value])
         base_rgb = hsv_to_rgb(base_hsv)
