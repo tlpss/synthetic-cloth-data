@@ -48,13 +48,15 @@ def create_cloth_scene(config: ClothSceneConfig):
     bpy.ops.object.select_by_type(type="LIGHT")
     bpy.ops.object.delete()
 
+    logger.debug("add background and surface")
     add_polyhaven_hdri_background_to_scene(config.hdri_config)
     surface = add_cloth_surface_to_scene(config.surface_config)
+    logger.debug("add cloth mesh")
     cloth_object, keypoint_vertex_ids = load_cloth_mesh(config.cloth_mesh_config)
     cloth_object.pass_index = 1  # TODO: make more generic  # mark for segmentation mask rendering
     add_camera(config.camera_config, cloth_object, keypoint_vertex_ids)
     # TODO: check if all keypoints are visible in the camera view, resample (?) if not.
-
+    logger.debug("add cloth material")
     add_material_to_cloth_mesh(
         cloth_object=cloth_object, cloth_type=config.cloth_type, config=config.cloth_material_config
     )
