@@ -2,12 +2,13 @@ import dataclasses
 import os
 
 import bpy
+import numpy as np
 
 
 @dataclasses.dataclass
 class RendererConfig:
-    exposure: float = 0.0
-    gamma: float = 1.0
+    exposure_min: float = -1.0
+    exposure_max: float = 1.0
     device: str = "GPU"
 
 
@@ -25,9 +26,8 @@ def render_scene(render_config: RendererConfig, output_dir: str):
     else:
         raise NotImplementedError(f"Renderer config {render_config} not implemented")
 
-    # TODO: randomize exposure and gamma
-    scene.view_settings.exposure = render_config.exposure
-    scene.view_settings.gamma = render_config.gamma
+    scene.view_settings.exposure = np.random.uniform(render_config.exposure_min, render_config.exposure_max)
+    scene.view_settings.gamma = 1.0
 
     # Make a directory to organize all the outputs
     os.makedirs(output_dir, exist_ok=True)
