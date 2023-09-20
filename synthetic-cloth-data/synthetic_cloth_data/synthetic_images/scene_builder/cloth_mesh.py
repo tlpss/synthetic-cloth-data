@@ -48,7 +48,7 @@ def load_cloth_mesh(config: ClothMeshConfig):
     z_min = np.min([(cloth_object.matrix_world @ v.co)[2] for v in cloth_object.data.vertices])
     cloth_object.location[2] -= z_min
     # make sure the cloth is a little above the surface for rendering purposes
-    cloth_object.location[2] += 0.0001
+    cloth_object.location[2] += 0.0005
 
     # randomize orientation
     cloth_object.rotation_euler[2] = np.random.rand() * 2 * np.pi
@@ -59,7 +59,7 @@ def load_cloth_mesh(config: ClothMeshConfig):
         bpy.context.object.modifiers["Subdivision"].render_levels = 2
 
     if config.solidify:
-        thickness = 0.001  # 2 mm cloth thickness.
+        thickness = np.random.uniform(0.001, 0.003)  # 1-3 mm cloth thickness.
         # note that this has impacts on the visibility of the keypoints
         # as these are now inside the mesh. Need to either test for 1-ring neighbours or make sure that the auxiliary cubes around a vertex
         # in the visibility check are larger than the solidify modifier thickness. The latter is what we do by default, since the rest distance of the cloth meshes
