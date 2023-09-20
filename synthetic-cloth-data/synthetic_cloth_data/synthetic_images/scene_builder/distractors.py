@@ -53,7 +53,7 @@ def add_distractors_to_scene(
         for _ in range(20):  # try 10 times to place the distractor, otherwise give up
             x = np.random.uniform(plane_x_min + border_delta, plane_x_max - border_delta)
             y = np.random.uniform(plane_y_min + border_delta, plane_y_max - border_delta)
-            z = 0.001  # make sure the distractor is above the surface
+            z = -0.0005  # make sure the distractor slightly below the surface for the collision checks
             distractor.location[0] = x
             distractor.location[1] = y
             distractor.location[2] = z
@@ -62,10 +62,15 @@ def add_distractors_to_scene(
             # check if the distractor is inside the cloth bbox
             if are_object_bboxes_in_collision(distractor, cloth_object):
                 continue
+            # check if the distractor is inside the surface bbox
+            if not are_object_bboxes_in_collision(distractor, surface_object):
+                continue
             else:
                 break
-        if are_object_bboxes_in_collision(distractor, cloth_object):
-            print("Warning: could not place distractor without collision with cloth")
+        if are_object_bboxes_in_collision(distractor, cloth_object) or not are_object_bboxes_in_collision(
+            distractor, surface_object
+        ):
+            print("Warning: could not place distractor on the surface without collision with cloth")
             # remove the distractor
             bpy.context.scene.collection.objects.unlink(distractor)
 
