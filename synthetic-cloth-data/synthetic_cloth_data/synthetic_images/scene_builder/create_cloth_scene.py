@@ -41,7 +41,12 @@ class ClothSceneConfig:
 
 
 def create_cloth_scene(config: ClothSceneConfig):
+    # remove the cube
     bpy.ops.object.delete()
+    # remove the default light
+    bpy.ops.object.select_by_type(type="LIGHT")
+    bpy.ops.object.delete()
+
     add_polyhaven_hdri_background_to_scene(config.hdri_config)
     surface = add_cloth_surface_to_scene(config.surface_config)
     cloth_object, keypoint_vertex_ids = load_cloth_mesh(config.cloth_mesh_config)
