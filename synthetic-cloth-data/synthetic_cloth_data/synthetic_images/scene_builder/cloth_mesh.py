@@ -16,7 +16,7 @@ class ClothMeshConfig:
     mesh_path: str
 
     solidify: bool = True
-    use_subdivision_modifier: bool = True
+    subdivide: bool = True
     xy_randomization_range: float = 0.1
     mesh_dir: List[str] = dataclasses.field(init=False)
 
@@ -53,10 +53,7 @@ def load_cloth_mesh(config: ClothMeshConfig):
     # randomize orientation
     cloth_object.rotation_euler[2] = np.random.rand() * 2 * np.pi
 
-    if config.use_subdivision_modifier:
-        # use modifier instead of operator as it is more powerful.
-        bpy.ops.object.modifier_add(type="SUBSURF")
-        bpy.context.object.modifiers["Subdivision"].render_levels = 2
+    # first solidify, then subdivide. The modifier will then also smooth the edges of the solidified mesh.
 
     if config.solidify:
         thickness = np.random.uniform(0.001, 0.003)  # 1-3 mm cloth thickness.
@@ -70,6 +67,24 @@ def load_cloth_mesh(config: ClothMeshConfig):
         # 2 mm, make sure the particle radius of the cloth simulator is larger than this!
         bpy.context.object.modifiers["Solidify"].thickness = thickness
         bpy.context.object.modifiers["Solidify"].offset = 0.0  # center the thickness around the original mesh
+
+        # disable auto-smooth to enable gpu-accelerated subsurface division modifier
+
+    bpy.ops.object.shade_flat()
+    bpy.context.object.data.use_auto_smooth = False
+    if config.subdivide:
+        #  modifier is more powerful than operator
+        # but it is also rather expensive. Make sure it is done on GPU!
+        # higher subdivision -> more expensive rendering, so have to find lowest amount that is still good enough
+        # also influenced by rendering resolution ofc.
+
+        bpy.ops.object.modifier_add(type="SUBSURF")
+        bpy.context.object.modifiers["Subdivision"].render_levels = 2
+        bpy.context.object.modifiers["Subdivision"].use_limit_surface = False
+
+        # bpy.ops.object.mode_set(mode="EDIT")
+        # bpy.ops.mesh.subdivide(smoothness=1,number_cuts=1)
+        # bpy.ops.object.mode_set(mode="OBJECT")
 
     keypoint_vertex_dict = json.load(open(str(mesh_file).replace(".obj", ".json")))["keypoint_vertices"]
     return cloth_object, keypoint_vertex_dict

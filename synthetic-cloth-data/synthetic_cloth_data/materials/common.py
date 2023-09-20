@@ -211,7 +211,6 @@ def _add_noise_texture_to_bsdf_normals(material: bpy.types.Material, scale, bump
     normal_input_node = None
     normal_input_node_socket = None
     if does_bsdf_have_normal_input(material):
-        print("BSDF has normal input")
         normal_input_node = bsdf_node.inputs["Normal"].links[0].from_node
         normal_input_node_socket = bsdf_node.inputs["Normal"].links[0].from_socket.identifier
 
@@ -249,7 +248,6 @@ def add_xy_wave_pattern_to_bsdf_normals(
     normal_input_node = None
     normal_input_node_socket = None
     if does_bsdf_have_normal_input(material):
-        print("BSDF has normal input")
         normal_input_node = bsdf_node.inputs["Normal"].links[0].from_node
         normal_input_node_socket = bsdf_node.inputs["Normal"].links[0].from_socket.identifier
 

@@ -4,6 +4,7 @@ import dataclasses
 
 import bpy
 import numpy as np
+from loguru import logger
 from synthetic_cloth_data.synthetic_images.scene_builder.annotator import create_coco_annotations
 from synthetic_cloth_data.synthetic_images.scene_builder.background import (
     HDRIConfig,
@@ -65,9 +66,11 @@ def create_sample(scene_config: ClothSceneConfig):
 
     output_dir = os.path.join(scene_config.relative_dataset_dir, f"{scene_config.coco_id:06d}")
     np.random.seed(2023 + scene_config.coco_id)
-
+    logger.debug("creating scene")
     cloth_object, keypoint_vertex_dict = create_cloth_scene(scene_config)
+    logger.debug("rendering scene")
     render_scene(scene_config.renderer_config, output_dir)
+    logger.debug("rendering done")
     create_coco_annotations(
         scene_config.cloth_type, output_dir, scene_config.coco_id, cloth_object, keypoint_vertex_dict
     )
