@@ -16,6 +16,7 @@ class CameraConfig:
     horizontal_sensor_size: int = 8.67  # 1/3 inch sensor
 
 
+@dataclasses.dataclass
 class SphericalCameraConfig(CameraConfig):
     """camera position is randomized on a sphere around the origin with specified radius but with minimal z coordinate."""
 
@@ -24,6 +25,7 @@ class SphericalCameraConfig(CameraConfig):
     max_sphere_radius: float = 1.2
 
 
+@dataclasses.dataclass
 class FixedCameraConfig(CameraConfig):
     """camera position is fixed"""
 
