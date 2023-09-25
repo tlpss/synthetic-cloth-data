@@ -1,12 +1,14 @@
 defaults:
-  - camera: zed2i_256_256
+  - camera: zed2i_512_256
   - cloth_mesh: default
+  - surface: default
+  - distractors: default
   - _self_
 
 
 cloth_type: TOWEL
 id: 5
-relative_dataset_path: synthetic_images/TOWEL/00
+relative_dataset_path: synthetic_images/TOWEL/06-smaller
 
 cloth_mesh:
-  mesh_path: deformed_meshes/TOWEL/pyflex/00
+  mesh_path: deformed_meshes/TOWEL/03-smaller

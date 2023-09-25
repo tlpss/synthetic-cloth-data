@@ -17,19 +17,51 @@ class PolyhavenMaterials(AssetConfig):
 
 @dataclasses.dataclass
 class SurfaceConfig:
+    pass
+
+
+@dataclasses.dataclass
+class PolyHavenTexturedSurfaceConfig(SurfaceConfig):
+    """adds a 2d plane and applies a random material from the polyhaven snapshots' material snapshot. Also randomizes (mildly) the base color of the material.
+    if probability is higher than poly_probability: a random RGB color is used instead."""
+
     size_range: Tuple[float, float] = (1, 3)
     polyhaven_material_probability: float = 0.95
     polyhaven_materials: PolyhavenMaterials = PolyhavenMaterials()
 
 
+@dataclasses.dataclass
+class RGBTableSurfaceConfig(SurfaceConfig):
+    """adds specific RGB color."""
+
+    size_range: Tuple[float, float] = (1, 3)
+    r: int = 255
+    g: int = 255
+    b: int = 255
+
+
+# TODO: should also provide a class for generic 3D assets that can be imported as blender assets.
+
+
 def add_cloth_surface_to_scene(config: SurfaceConfig) -> bpy.types.Object:
-    size = np.random.uniform(*config.size_range, size=2)
+    if isinstance(config, PolyHavenTexturedSurfaceConfig):
+        return add_textured_surface_to_scene(config)
+    elif isinstance(config, RGBTableSurfaceConfig):
+        return add_rgb_surface_to_scene(config)
+
+
+def _add_plane_to_scene(size: Tuple[float, float]) -> bpy.types.Object:
     bpy.ops.mesh.primitive_plane_add(size=1)
     # scale the plane to the desired size (cannot do this on creation bc of weir thing in blender API
     # :https://devtalk.blender.org/t/setting-scale-on-primitive-creation/28348 )
     bpy.ops.transform.resize(value=(size[0], size[1], 1))
     plane = bpy.context.object
+    return plane
 
+
+def add_textured_surface_to_scene(config: PolyHavenTexturedSurfaceConfig) -> bpy.types.Object:
+    size = np.random.uniform(*config.size_range, size=2)
+    plane = _add_plane_to_scene(size)
     if np.random.rand() < config.polyhaven_material_probability and len(config.polyhaven_materials.asset_list) > 0:
         material_dict = np.random.choice(config.polyhaven_materials.asset_list)
         material = ab.load_asset(**material_dict)
@@ -76,4 +108,12 @@ def add_cloth_surface_to_scene(config: SurfaceConfig) -> bpy.types.Object:
         base_rgb = hsv_to_rgb(base_hsv)
         ab.add_material(plane, color=base_rgb)
 
+    return plane
+
+
+def add_rgb_surface_to_scene(config: RGBTableSurfaceConfig) -> bpy.types.Object:
+    size = np.random.uniform(*config.size_range, size=2)
+    plane = _add_plane_to_scene(size)
+
+    ab.add_material(plane, color=(config.r, config.g, config.b, 1.0))
     return plane
