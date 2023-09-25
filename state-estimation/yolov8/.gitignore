@@ -1,0 +1,4 @@
+data/**
+runs/**
+wandb/**
+**.pt
