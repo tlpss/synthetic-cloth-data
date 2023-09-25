@@ -14,9 +14,22 @@ class CameraConfig:
     horizontal_resolution: int = 512  # rounded to multiple of 256 for MaxViT?
     vertical_resolution: int = 288  # 16:9 aspect ratio
     horizontal_sensor_size: int = 8.67  # 1/3 inch sensor
+
+
+class SphericalCameraConfig(CameraConfig):
+    """camera position is randomized on a sphere around the origin with specified radius but with minimal z coordinate."""
+
     # extrinsics
-    minimal_camera_height: float = 0.1
-    max_sphere_radius: float = 1.0
+    minimal_camera_height: float = 0.2
+    max_sphere_radius: float = 1.2
+
+
+class FixedCameraConfig(CameraConfig):
+    """camera position is fixed"""
+
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 1.2
 
 
 def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_vertices_dict: dict) -> bpy.types.Object:
@@ -37,39 +50,48 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
     scene.render.resolution_x = image_width
     scene.render.resolution_y = image_height
 
-    # TODO: randomize camera parameters?
+    # set the extrinsics
 
-    def _sample_point_on_unit_sphere(z_min: float) -> np.ndarray:
-        """sample a point on the unit sphere, with z coordinate >= z_min, and uniform distribution of the height z in that range"""
-        z = np.random.uniform(z_min, 1)
-        phi = np.random.uniform(0, 2 * np.pi)
-        x = np.sqrt(1 - z**2) * np.cos(phi)
-        y = np.sqrt(1 - z**2) * np.sin(phi)
+    if isinstance(config, SphericalCameraConfig):
+        camera_placed = False
+        while not camera_placed:
+            camera.location = _sample_point_on_unit_sphere(
+                z_min=config.minimal_camera_height, max_radius=config.max_sphere_radius
+            )
+            # Make the camera look at the origin, around which the cloth and table are assumed to be centered.
+            camera_direction = -camera.location
+            camera_direction = Vector(camera_direction)
+            camera.rotation_euler = camera_direction.to_track_quat("-Z", "Y").to_euler()
 
-        x = np.random.uniform(-0.5, 0.5)
-        y = np.random.uniform(-0.5, 0.5)
-        point_on_unit_sphere = np.array([x, y, z])
+            bpy.context.view_layer.update()  # update the scene to propagate the new camera location & orientation
+            camera_placed = are_keypoints_in_camera_frustum(cloth_object, keypoint_vertices_dict, camera)
 
-        return point_on_unit_sphere
+    elif isinstance(config, FixedCameraConfig):
+        camera.location = Vector((config.x, config.y, config.z))
+        # Make the camera look at the origin, around which the cloth and table are assumed to be centered.
+        # user responsible for making sure the keypoints are in the camera frustum if desired.
 
-    camera_placed = False
-    while not camera_placed:
-        camera.location = _sample_point_on_unit_sphere(
-            z_min=config.minimal_camera_height
-        )  # * np.random.uniform(1, config.max_sphere_radius)
-        # Make the camera look at tthe origin, around which the cloth and table are assumed to be centered.
-        camera_direction = -camera.location
-        camera_direction = Vector(camera_direction)
-        camera.rotation_euler = camera_direction.to_track_quat("-Z", "Y").to_euler()
+        camera.rotation_euler = Vector((0, 0, 0)).to_track_quat("-Z", "Y").to_euler()
 
-        bpy.context.view_layer.update()  # update the scene to propagate the new camera location & orientation
-        camera_placed = True
-        camera_placed = are_keypoints_in_camera_frustum(cloth_object, keypoint_vertices_dict, camera)
-
+    bpy.context.view_layer.update()
     return camera
 
 
 ## Utils
+
+
+def _sample_point_on_unit_sphere(z_min: float, max_radius) -> np.ndarray:
+    """sample a point on the unit sphere, with z coordinate >= z_min, and uniform distribution of the height z in that range"""
+    z = np.random.uniform(z_min, max_radius)
+    phi = np.random.uniform(0, 2 * np.pi)
+    x = np.sqrt(1 - z**2) * np.cos(phi)
+    y = np.sqrt(1 - z**2) * np.sin(phi)
+
+    x = np.random.uniform(-0.5, 0.5)
+    y = np.random.uniform(-0.5, 0.5)
+    point_on_unit_sphere = np.array([x, y, z])
+
+    return point_on_unit_sphere
 
 
 def are_keypoints_in_camera_frustum(
