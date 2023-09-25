@@ -1,4 +1,4 @@
-_target_: synthetic_cloth_data.synthetic_images.scene_builder.camera.CameraConfig
+_target_: synthetic_cloth_data.synthetic_images.scene_builder.camera.SphericalCameraConfig
 
 horizontal_fov: 100
 horizontal_sensor_size: 8.67
