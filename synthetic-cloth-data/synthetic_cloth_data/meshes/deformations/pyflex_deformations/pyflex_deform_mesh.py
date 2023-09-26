@@ -158,6 +158,10 @@ def deform_mesh(
     logger.debug(f"bend stiffness: {bend_stiffness}")
     logger.debug(f"drag: {drag}")
 
+    # cannot use this multiple times in the same process (segfault)
+    # so start in new process, in which case there is no need to actually call the clean since all memory will be released anyways.
+    # pyflex.clean()
+
 
 def generate_deformed_mesh(
     deformation_config: DeformationConfig,
@@ -225,6 +229,17 @@ if __name__ == "__main__":
         deformation_config = hydra.utils.instantiate(cfg["deformation_config"])
         print(deformation_config)
         for id in tqdm.trange(cfg.start_id, cfg.start_id + cfg.num_samples):
-            generate_deformed_mesh(deformation_config, cfg.mesh_dir, cfg.output_dir, id, debug=cfg.debug)
+
+            # call python method in new process to avoid memory buildup
+            # (cannot use pyflex.clean() multiple times in the same process)
+            import multiprocessing
+
+            p = multiprocessing.Process(
+                target=generate_deformed_mesh, args=(deformation_config, cfg.mesh_dir, cfg.output_dir, id, cfg.debug)
+            )
+            p.start()
+            p.join()
+
+            # generate_deformed_mesh(deformation_config, cfg.mesh_dir, cfg.output_dir, id, debug=cfg.debug)
 
     generate_deformed_meshes()
