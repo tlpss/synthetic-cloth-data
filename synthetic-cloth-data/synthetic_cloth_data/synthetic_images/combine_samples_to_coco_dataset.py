@@ -18,7 +18,7 @@ towel_category = CocoKeypointCategory(
     id=0,
     name="towel",
     keypoints=TOWEL_KEYPOINTS,
-    skeleton=[],
+    skeleton=[(0, 1), (1, 2), (2, 3)],
 )
 tshirt_category = CocoKeypointCategory(
     supercategory="cloth",

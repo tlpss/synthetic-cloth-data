@@ -57,7 +57,7 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
     if isinstance(config, SphericalCameraConfig):
         camera_placed = False
         while not camera_placed:
-            camera.location = _sample_point_on_unit_sphere(
+            camera.location = _sample_point_in_capped_sphere(
                 z_min=config.minimal_camera_height, max_radius=config.max_sphere_radius
             )
             # Make the camera look at the origin, around which the cloth and table are assumed to be centered.
@@ -82,7 +82,7 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
 ## Utils
 
 
-def _sample_point_on_unit_sphere(z_min: float, max_radius) -> np.ndarray:
+def _sample_point_in_capped_sphere(z_min: float, max_radius) -> np.ndarray:
     """sample a point on the unit sphere, with z coordinate >= z_min, and uniform distribution of the height z in that range"""
 
     while True:
@@ -105,3 +105,10 @@ def are_keypoints_in_camera_frustum(
         if not is_point_in_camera_frustum(point, camera):
             return False
     return True
+
+
+if __name__ == "__main__":
+
+    for _ in range(1000):
+        position = _sample_point_in_capped_sphere(0.8, 1.0)
+        bpy.ops.mesh.primitive_ico_sphere_add(location=position, scale=(0.01, 0.01, 0.01))

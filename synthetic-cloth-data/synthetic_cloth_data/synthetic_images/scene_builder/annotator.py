@@ -5,6 +5,7 @@ import os
 
 import bpy
 import cv2
+import numpy as np
 from airo_dataset_tools.data_parsers.coco import CocoImage, CocoKeypointAnnotation
 from airo_dataset_tools.segmentation_mask_converter import BinarySegmentationMask
 from bpy_extras.object_utils import world_to_camera_view
@@ -29,9 +30,6 @@ def create_coco_annotations(
     rle_mask = segmentation.as_compressed_rle
 
     bbox = segmentation.bbox
-    x_min, y_min, width, height = bbox
-    x_min + width
-    y_min + height
 
     image_height, image_width = segmentation_mask.shape[0], segmentation_mask.shape[1]
     coco_image = CocoImage(file_name=image_path, height=image_height, width=image_width, id=coco_id)
@@ -41,7 +39,19 @@ def create_coco_annotations(
     ]
     scene = bpy.context.scene
     camera = bpy.context.scene.camera
-    keypoints_2D = [world_to_camera_view(scene, camera, corner) for corner in keypoints_3D]
+
+    keypoints_2D = np.array([np.array(world_to_camera_view(scene, camera, corner))[:2] for corner in keypoints_3D])
+
+    # flip y-axis because blender uses y-up and we use y-down (as does coco)
+    keypoints_2D[:, 1] = 1.0 - keypoints_2D[:, 1]
+
+    # scale keypoints to pixel coordinates
+    keypoints_2D[:, 0] = keypoints_2D[:, 0] * image_width
+    keypoints_2D[:, 1] = keypoints_2D[:, 1] * image_height
+
+    # order keypoints to deal with symmetries.
+    if cloth_type == "TOWEL":
+        keypoints_2D, keypoints_3D = _order_towel_keypoints(keypoints_2D, keypoints_3D, bbox)
 
     # check if cloth object has a solidify modifier and remove it temporarily because it affects the ray cast and hence the visibility check.
     solidify_modifier = None
@@ -55,9 +65,8 @@ def create_coco_annotations(
     coco_keypoints = []
     num_labeled_keypoints = 0
     for keypoint_3D, keypoint_2D in zip(keypoints_3D, keypoints_2D):
-        u, v, _ = keypoint_2D
-        px = image_width * u
-        py = image_height * (1.0 - v)
+        u, v = keypoint_2D
+        px, py = u, v
 
         visible_flag = 1 if is_vertex_occluded_for_scene_camera(keypoint_3D) else 2
         print(f"{keypoint_3D} -> visible_flag: {visible_flag}")
@@ -101,3 +110,41 @@ def create_coco_annotations(
     coco_annotation_json_path = os.path.join(output_dir, coco_annotation_json)
     with open(coco_annotation_json_path, "w") as file:
         json.dump(annotation.dict(exclude_none=True), file, indent=4)
+
+
+def _order_towel_keypoints(keypoints_2D, keypoints_3D, bbox):
+    x_min, y_min, width, height = bbox
+
+    # keypoints are in cyclical order but we need to break symmetries by having a starting point in the image viewpoint
+    bbox_top_left = (x_min, y_min)
+
+    # find the keypoint that is closest to the top left corner of the bounding box
+    distances = [np.linalg.norm(np.array(keypoint_2D) - np.array(bbox_top_left)) for keypoint_2D in keypoints_2D]
+    starting_keypoint_index = np.argmin(distances)
+
+    # now order the keypoints in a cyclical order starting from the starting keypoint with the second keypoints being the neighbour that is
+    # closest to the topright corner of the bbox
+
+    bbox_top_right = (x_min + width, y_min)
+    distances = [
+        np.linalg.norm(
+            np.array(keypoints_2D[(starting_keypoint_index + i) % len(keypoints_2D)]) - np.array(bbox_top_right)
+        )
+        for i in [-1, +1]
+    ]
+    direction = -1 if np.argmin(distances) == 0 else +1
+    second_keypoint_index = (starting_keypoint_index + direction) % len(keypoints_2D)
+
+    # now order the keypoints in a cyclical order starting from the starting keypoint with the second keypoints being the neighbour that is
+    direction = second_keypoint_index - starting_keypoint_index
+
+    order = [starting_keypoint_index]
+    for i in range(1, len(keypoints_2D)):
+        order.append((starting_keypoint_index + i * direction) % len(keypoints_2D))
+
+    new_keypoints_2D = [keypoints_2D[i] for i in order]
+    new_keypoints_3D = [keypoints_3D[i] for i in order]
+
+    keypoints_2D = new_keypoints_2D
+    keypoints_3D = new_keypoints_3D
+    return keypoints_2D, keypoints_3D
