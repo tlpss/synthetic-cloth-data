@@ -7,8 +7,8 @@ import numpy as np
 
 @dataclasses.dataclass
 class RendererConfig:
-    exposure_min: float = -1.0
-    exposure_max: float = 1.0
+    exposure_min: float = 0.0
+    exposure_max: float = 0.0
     device: str = "GPU"
 
 

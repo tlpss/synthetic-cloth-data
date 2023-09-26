@@ -1,0 +1,4 @@
+_target_: synthetic_cloth_data.synthetic_images.scene_builder.surface.HSVTableSurfaceConfig
+h_range: [0.0,0.5]
+s_range: [1.0,1.0]
+v_range: [1.0,1.0]

@@ -1,0 +1,17 @@
+# @package _global_
+relative_dataset_path: synthetic_images/TOWEL/07-fixed-towel-and-background
+
+cloth_mesh:
+  mesh_path: deformed_meshes/TOWEL/03-smaller
+
+camera:
+  minimal_camera_height: 0.8 # keep camera rather vertical
+  max_sphere_radius: 1.2
+
+surface:
+  h_range: [0.701,0.701]
+  s_range: [0.04,0.04]
+  v_range: [0.88,0.88]
+
+
+

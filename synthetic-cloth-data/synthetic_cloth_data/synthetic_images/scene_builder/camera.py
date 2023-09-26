@@ -84,16 +84,15 @@ def add_camera(config: CameraConfig, cloth_object: bpy.types.Object, keypoint_ve
 
 def _sample_point_on_unit_sphere(z_min: float, max_radius) -> np.ndarray:
     """sample a point on the unit sphere, with z coordinate >= z_min, and uniform distribution of the height z in that range"""
-    z = np.random.uniform(z_min, max_radius)
-    phi = np.random.uniform(0, 2 * np.pi)
-    x = np.sqrt(1 - z**2) * np.cos(phi)
-    y = np.sqrt(1 - z**2) * np.sin(phi)
 
-    x = np.random.uniform(-0.5, 0.5)
-    y = np.random.uniform(-0.5, 0.5)
-    point_on_unit_sphere = np.array([x, y, z])
+    while True:
+        x = np.random.uniform(-max_radius, max_radius)
+        y = np.random.uniform(-max_radius, max_radius)
+        z = np.random.uniform(z_min, max_radius)
+        if x**2 + y**2 + z**2 <= max_radius**2:
+            break
 
-    return point_on_unit_sphere
+    return np.array([x, y, z])
 
 
 def are_keypoints_in_camera_frustum(

@@ -1,7 +1,7 @@
 defaults:
   - camera: zed2i_512_256
   - cloth_mesh: default
-  - surface: default
+  - surface: polyhaven
   - distractors: default
   - _self_
 

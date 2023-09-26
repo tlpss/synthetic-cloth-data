@@ -31,13 +31,14 @@ class PolyHavenTexturedSurfaceConfig(SurfaceConfig):
 
 
 @dataclasses.dataclass
-class RGBTableSurfaceConfig(SurfaceConfig):
-    """adds specific RGB color."""
+class HSVTableSurfaceConfig(SurfaceConfig):
+    """create a plane and randomizes the color around the specified HSV color range."""
 
     size_range: Tuple[float, float] = (1, 3)
-    r: int = 255
-    g: int = 255
-    b: int = 255
+
+    h_range: List[float] = dataclasses.field(default_factory=lambda: [0.0, 1.0])
+    s_range: List[float] = dataclasses.field(default_factory=lambda: [0.0, 0.7])
+    v_range: List[float] = dataclasses.field(default_factory=lambda: [1.0, 1.0])
 
 
 # TODO: should also provide a class for generic 3D assets that can be imported as blender assets.
@@ -46,7 +47,7 @@ class RGBTableSurfaceConfig(SurfaceConfig):
 def add_cloth_surface_to_scene(config: SurfaceConfig) -> bpy.types.Object:
     if isinstance(config, PolyHavenTexturedSurfaceConfig):
         return add_textured_surface_to_scene(config)
-    elif isinstance(config, RGBTableSurfaceConfig):
+    elif isinstance(config, HSVTableSurfaceConfig):
         return add_rgb_surface_to_scene(config)
 
 
@@ -111,9 +112,15 @@ def add_textured_surface_to_scene(config: PolyHavenTexturedSurfaceConfig) -> bpy
     return plane
 
 
-def add_rgb_surface_to_scene(config: RGBTableSurfaceConfig) -> bpy.types.Object:
+def add_rgb_surface_to_scene(config: HSVTableSurfaceConfig) -> bpy.types.Object:
     size = np.random.uniform(*config.size_range, size=2)
     plane = _add_plane_to_scene(size)
 
-    ab.add_material(plane, color=(config.r, config.g, config.b, 1.0))
+    hue = np.random.uniform(*config.h_range)
+    saturation = np.random.uniform(*config.s_range)
+    value = np.random.uniform(*config.v_range)
+    hsv = np.array([hue, saturation, value])
+    rgb = hsv_to_rgb(hsv)
+    print(rgb)
+    ab.add_material(plane, color=rgb)
     return plane
