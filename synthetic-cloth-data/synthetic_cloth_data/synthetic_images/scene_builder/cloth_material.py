@@ -1,4 +1,5 @@
 import dataclasses
+from typing import List
 
 import bpy
 import numpy as np
@@ -21,19 +22,27 @@ class ClothMaterialConfig:
     pass
 
 
+@dataclasses.dataclass
 class TowelMaterialConfig(ClothMaterialConfig):
     uniform_color_probability: float = 0.4  # probability of a uniform color material
     striped_probability: float = 0.3  # probability of a striped material
 
 
+@dataclasses.dataclass
+class HSVMaterialConfig(ClothMaterialConfig):
+    h_range: List = dataclasses.field(default_factory=lambda: [0, 1])
+    s_range: List = dataclasses.field(default_factory=lambda: [0, 1])
+    v_range: List = dataclasses.field(default_factory=lambda: [0.5, 1])
+
+
 def add_material_to_cloth_mesh(config: ClothMaterialConfig, cloth_object: bpy.types.Object, cloth_type: CLOTH_TYPES):
-    if cloth_type == CLOTH_TYPES.TSHIRT:
-        _add_material_to_towel_mesh(config, cloth_object)
-    elif cloth_type == CLOTH_TYPES.TOWEL:
-        _add_material_to_towel_mesh(config, cloth_object)
+    if isinstance(config, TowelMaterialConfig):
+        _add_towel_material_to_mesh(config, cloth_object)
+    elif isinstance(config, HSVMaterialConfig):
+        _add_rgb_material_to_mesh(config, cloth_object)
 
 
-def _add_material_to_towel_mesh(config: TowelMaterialConfig, cloth_object: bpy.types.Object):
+def _add_towel_material_to_mesh(config: TowelMaterialConfig, cloth_object: bpy.types.Object):
     material_sample = np.random.rand()
 
     if material_sample < config.uniform_color_probability:
@@ -93,4 +102,26 @@ def _add_material_to_towel_mesh(config: TowelMaterialConfig, cloth_object: bpy.t
     fabric_material_config.wave_strength = np.random.uniform(0.0, 0.4)
     fabric_material_config.wave_scale = np.random.uniform(50, 150)
     material = add_fabric_material_to_bsdf(material, fabric_material_config)
+    cloth_object.data.materials[0] = material
+
+
+def _add_rgb_material_to_mesh(config: HSVMaterialConfig, cloth_object: bpy.types.Object):
+    h = np.random.uniform(config.h_range[0], config.h_range[1])
+    s = np.random.uniform(config.s_range[0], config.s_range[1])
+    v = np.random.uniform(config.v_range[0], config.v_range[1])
+    hsv = np.array([h, s, v])
+    rgb = hsv_to_rgb(hsv)
+    rgba = np.concatenate([rgb, [1]])
+    material = create_evenly_colored_material(rgba)
+    material = modify_bsdf_to_cloth(material)
+
+    fabric_material_config = FabricMaterialConfig()
+    fabric_material_config.high_frequency_noise_strength = np.random.uniform(0.1, 0.4)
+    fabric_material_config.low_frequency_noise_strength = np.random.uniform(0.02, 0.15)
+    fabric_material_config.high_frequency_noise_scale = np.random.uniform(200, 400)
+    fabric_material_config.low_frequency_noise_scale = np.random.uniform(10, 30)
+    fabric_material_config.wave_strength = np.random.uniform(0.0, 0.4)
+    fabric_material_config.wave_scale = np.random.uniform(50, 150)
+    material = add_fabric_material_to_bsdf(material, fabric_material_config)
+
     cloth_object.data.materials[0] = material

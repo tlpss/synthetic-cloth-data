@@ -1,6 +1,8 @@
 defaults:
   - camera: zed2i_512_256
+  - renderer: cycles
   - cloth_mesh: default
+  - cloth_material: hsv
   - surface: hsv
   - distractors: default
   - _self_
@@ -11,4 +13,4 @@ id: 5
 relative_dataset_path: synthetic_images/TOWEL/dev
 
 cloth_mesh:
-  mesh_path: deformed_meshes/TOWEL/03-smaller
+  mesh_path: deformed_meshes/TOWEL/pyflex/dev

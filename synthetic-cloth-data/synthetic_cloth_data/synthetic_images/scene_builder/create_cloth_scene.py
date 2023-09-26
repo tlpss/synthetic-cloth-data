@@ -13,16 +13,11 @@ from synthetic_cloth_data.synthetic_images.scene_builder.background import (
 from synthetic_cloth_data.synthetic_images.scene_builder.camera import CameraConfig, add_camera
 from synthetic_cloth_data.synthetic_images.scene_builder.cloth_material import (
     ClothMaterialConfig,
-    TowelMaterialConfig,
     add_material_to_cloth_mesh,
 )
 from synthetic_cloth_data.synthetic_images.scene_builder.cloth_mesh import ClothMeshConfig, load_cloth_mesh
 from synthetic_cloth_data.synthetic_images.scene_builder.distractors import DistractorConfig, add_distractors_to_scene
-from synthetic_cloth_data.synthetic_images.scene_builder.renderer import (
-    CyclesRendererConfig,
-    RendererConfig,
-    render_scene,
-)
+from synthetic_cloth_data.synthetic_images.scene_builder.renderer import RendererConfig, render_scene
 from synthetic_cloth_data.synthetic_images.scene_builder.surface import SurfaceConfig, add_cloth_surface_to_scene
 from synthetic_cloth_data.utils import CLOTH_TYPES
 
@@ -108,11 +103,11 @@ if __name__ == "__main__":
         cloth_type=CLOTH_TYPES[cfg["cloth_type"]],
         cloth_mesh_config=hydra.utils.instantiate(cfg["cloth_mesh"]),
         hdri_config=HDRIConfig(),
-        cloth_material_config=TowelMaterialConfig(),
+        cloth_material_config=hydra.utils.instantiate(cfg["cloth_material"]),
         camera_config=hydra.utils.instantiate(cfg["camera"]),
         surface_config=hydra.utils.instantiate(cfg["surface"]),
         distractor_config=hydra.utils.instantiate(cfg["distractors"]),
-        renderer_config=CyclesRendererConfig(),
+        renderer_config=hydra.utils.instantiate(cfg["renderer"]),
         coco_id=cfg["id"],
         relative_dataset_dir=DATA_DIR / cfg["relative_dataset_path"],
     )

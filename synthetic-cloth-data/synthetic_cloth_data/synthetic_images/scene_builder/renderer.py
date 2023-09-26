@@ -12,8 +12,10 @@ class RendererConfig:
     device: str = "GPU"
 
 
+@dataclasses.dataclass
 class CyclesRendererConfig(RendererConfig):
     num_samples: int = 32
+    denoise: bool = True
 
 
 def render_scene(render_config: RendererConfig, output_dir: str):
@@ -21,6 +23,7 @@ def render_scene(render_config: RendererConfig, output_dir: str):
 
     if isinstance(render_config, CyclesRendererConfig):
         scene.render.engine = "CYCLES"
+        scene.cycles.use_denoising = render_config.denoise
         scene.cycles.samples = render_config.num_samples
         scene.cycles.device = render_config.device
     else:
