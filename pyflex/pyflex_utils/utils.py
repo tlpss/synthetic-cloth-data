@@ -287,10 +287,27 @@ def load_cloth_mesh_in_simulator(
     return vertices, faces
 
 
+def create_obj_with_new_vertex_positions_the_hacky_way(
+    new_vertex_positions: np.ndarray, file_path: str, target_file_path: str
+):
+    """trimesh keeps messing with faces and vertices, so this function does a one-on-one replacement of the vertex positions in the obj file."""
+    with open(file_path, "r") as f:
+        lines = f.readlines()
+    vertex_idx = 0
+    for line_idx, line in enumerate(lines):
+        if line.startswith("v "):
+            lines[
+                line_idx
+            ] = f"v {new_vertex_positions[vertex_idx][0]} {new_vertex_positions[vertex_idx][1]} {new_vertex_positions[vertex_idx][2]}\n"
+            vertex_idx += 1
+    with open(target_file_path, "w") as f:
+        f.writelines(lines)
+
+
 def create_obj_with_new_vertex_positions(positions: np.ndarray, obj_path: str, target_obj_path: str):
     """Creates a new obj mesh by replacing the positions of the vertices in the original obj mesh. The order positions must match the order of the vertices in the original mesh."""
     # allow order change for faces to avoid artifacts in the texture coordinates
-    # this should not influence the vertex positions.
+    # this should not influence the vertex positions if the mesh does not contain duplicate uv coordinates for a single vertex.
     mesh = trimesh.load(obj_path, process=False, maintain_order=False)
     assert len(mesh.vertices) == len(
         positions
@@ -340,6 +357,6 @@ if __name__ == "__main__":
     grasper.circular_fold_particle(np.array([-0.3, 0, 0]), np.pi)
     grasper.release_particle()
 
-    create_obj_with_new_vertex_positions(cloth_system.get_positions(), mesh_path, "test.obj")
+    create_obj_with_new_vertex_positions_the_hacky_way(cloth_system.get_positions(), mesh_path, "test.obj")
 
     time.sleep(2)

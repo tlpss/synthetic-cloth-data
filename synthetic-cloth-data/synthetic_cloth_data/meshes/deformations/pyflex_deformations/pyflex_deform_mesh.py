@@ -178,6 +178,8 @@ def generate_deformed_mesh(
     mesh_paths = [str(path) for path in mesh_dir_path.glob("*.obj")]
     mesh_path = np.random.choice(mesh_paths)
 
+    logger.debug(f"mesh path: {mesh_path}")
+
     filename = f"{id:06d}.obj"
     output_dir_relative_path = DATA_DIR / output_dir_relative_path
     output_dir_relative_path.mkdir(parents=True, exist_ok=True)
