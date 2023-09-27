@@ -13,7 +13,7 @@ from pyflex_utils import (
     create_pyflex_cloth_scene_config,
     wait_until_scene_is_stable,
 )
-from pyflex_utils.utils import create_obj_with_new_vertex_positions, load_cloth_mesh_in_simulator
+from pyflex_utils.utils import create_obj_with_new_vertex_positions_the_hacky_way, load_cloth_mesh_in_simulator
 from synthetic_cloth_data import DATA_DIR
 from synthetic_cloth_data.meshes.utils.projected_mesh_area import get_mesh_projected_xy_area
 from synthetic_cloth_data.utils import get_metadata_dict_for_dataset
@@ -149,7 +149,9 @@ def deform_mesh(
     cloth_system.center_object()
 
     # export mesh
-    create_obj_with_new_vertex_positions(cloth_system.get_positions(), undeformed_mesh_path, target_mesh_path)
+    create_obj_with_new_vertex_positions_the_hacky_way(
+        cloth_system.get_positions(), undeformed_mesh_path, target_mesh_path
+    )
 
     logger.debug(f"static friction: {static_friction}")
     logger.debug(f"dynamic friction: {dynamic_friction}")
