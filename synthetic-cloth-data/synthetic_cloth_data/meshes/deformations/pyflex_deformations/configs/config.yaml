@@ -1,10 +1,12 @@
 deformation_config:
   _target_: synthetic_cloth_data.meshes.deformations.pyflex_deformations.pyflex_deform_mesh.DeformationConfig
+  fold_probability: 1.0
+  grasp_keypoint_vertex_probability: 0.8
 
 mesh_dir: flat_meshes/TOWEL/dev
 output_dir: deformed_meshes/TOWEL/pyflex/dev
 
-num_samples: 1
+num_samples: 10
 start_id: 0
 debug: True
 

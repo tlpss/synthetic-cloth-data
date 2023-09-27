@@ -1,0 +1,31 @@
+# @package _global_
+
+defaults:
+  - override /cloth_material: hsv
+
+relative_dataset_path: synthetic_images/TSHIRT/01-purple-tshirt-on-white
+
+cloth_mesh:
+  mesh_path: deformed_meshes/TSHIRT/pyflex/cloth3d
+
+camera:
+  minimal_camera_height: 1.1 # keep camera rather vertical
+  max_sphere_radius: 1.2
+
+surface:
+  size_range: [4,4]
+  h_range: [0.1,0.1]
+  s_range: [0.07,0.07]
+  v_range: [0.88,0.88]
+
+
+distractors:
+  max_distractors: 0
+cloth_material:
+  h_range: [0.97,0.97]
+  s_range: [0.95,0.95]
+  v_range: [0.8,0.8]
+
+renderer:
+  exposure_min: 0.0
+  exposure_max: 0.0
