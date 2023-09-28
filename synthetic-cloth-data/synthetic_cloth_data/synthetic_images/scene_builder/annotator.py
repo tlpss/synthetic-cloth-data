@@ -12,7 +12,7 @@ from bpy_extras.object_utils import world_to_camera_view
 from synthetic_cloth_data.synthetic_images.scene_builder.utils.visible_vertices import (
     is_vertex_occluded_for_scene_camera,
 )
-from synthetic_cloth_data.utils import CLOTH_TYPE_TO_COCO_CATEGORY_ID
+from synthetic_cloth_data.utils import CLOTH_TYPE_TO_COCO_CATEGORY_ID, TSHIRT_KEYPOINTS
 
 
 def create_coco_annotations(
@@ -52,6 +52,8 @@ def create_coco_annotations(
     # order keypoints to deal with symmetries.
     if cloth_type == "TOWEL":
         keypoints_2D, keypoints_3D = _order_towel_keypoints(keypoints_2D, keypoints_3D, bbox)
+    if cloth_type == "TSHIRT":
+        keypoints_2D, keypoints_3D = _order_tshirt_keypoints(keypoints_2D, keypoints_3D, bbox)
 
     # check if cloth object has a solidify modifier and remove it temporarily because it affects the ray cast and hence the visibility check.
     solidify_modifier = None
@@ -81,6 +83,10 @@ def create_coco_annotations(
             num_labeled_keypoints += 1
 
         coco_keypoints += (px, py, visible_flag)
+
+        # for debugging:
+        # add 3D sphere around each keypoint
+        # bpy.ops.mesh.primitive_uv_sphere_add(radius=0.01, location=keypoint_3D)
 
     # add the solidifier back if required
     if solidify_modifier is not None:
@@ -147,4 +153,41 @@ def _order_towel_keypoints(keypoints_2D, keypoints_3D, bbox):
 
     keypoints_2D = new_keypoints_2D
     keypoints_3D = new_keypoints_3D
+    return keypoints_2D, keypoints_3D
+
+
+def _order_tshirt_keypoints(keypoints_2D: np.ndarray, keypoints_3D: np.ndarray, bbox: tuple):
+
+    # 'left == the side of which the should keypoint is closest to the top left corner of the bbox'
+    # to resolve 'apparent' symmetry in the tshirt meshes, because tshirts are not symmetric in the real world, but if the neck is invisible
+    # the tshirt is symmetric in the image.
+
+    # get the two shoulder keypoints
+    # determine which one is closer to the top left corner of the bbox
+    # if left is closest, stop. If right is closests: flip all left and right keypoints, to make that one the left one.
+
+    shoulder_left_idx = TSHIRT_KEYPOINTS.index("shoulder_left")
+    shoulder_right_idx = TSHIRT_KEYPOINTS.index("shoulder_right")
+
+    shoulder_left_2D = keypoints_2D[shoulder_left_idx]
+    shoulder_right_2D = keypoints_2D[shoulder_right_idx]
+    top_left_bbox = (bbox[0], bbox[1])
+    distances = [
+        np.linalg.norm(np.array(keypoint_2D) - np.array(top_left_bbox))
+        for keypoint_2D in [shoulder_left_2D, shoulder_right_2D]
+    ]
+    minimal_distance_idx = np.argmin(distances)
+    should_tshirt_be_flipped = minimal_distance_idx == 1
+
+    if should_tshirt_be_flipped:
+        for idx, keypoint in enumerate(TSHIRT_KEYPOINTS):
+            if "left" in keypoint:
+                right_idx = TSHIRT_KEYPOINTS.index(keypoint.replace("left", "right"))
+                print(idx)
+                print(right_idx)
+                print(TSHIRT_KEYPOINTS[idx])
+                print(TSHIRT_KEYPOINTS[right_idx])
+                keypoints_2D[idx], keypoints_2D[right_idx] = keypoints_2D[right_idx], keypoints_2D[idx]
+                keypoints_3D[idx], keypoints_3D[right_idx] = keypoints_3D[right_idx], keypoints_3D[idx]
+
     return keypoints_2D, keypoints_3D
