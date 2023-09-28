@@ -4,11 +4,10 @@ defaults:
   - override /cloth_material: hsv
   - override /surface: hsv
 
-
-relative_dataset_path: synthetic_images/TSHIRT/01-purple-tshirt-on-white
+relative_dataset_path: synthetic_images/TOWEL/08-yellow-towel-on-white
 
 cloth_mesh:
-  mesh_path: deformed_meshes/TSHIRT/pyflex/cloth3d
+  mesh_path: deformed_meshes/TOWEL/03-smaller
 
 camera:
   minimal_camera_height: 1.1 # keep camera rather vertical
@@ -24,9 +23,9 @@ surface:
 distractors:
   max_distractors: 0
 cloth_material:
-  h_range: [0.97,0.97]
+  h_range: [0.14,0.14]
   s_range: [0.95,0.95]
-  v_range: [0.8,0.8]
+  v_range: [0.97,0.97]
 
 renderer:
   exposure_min: 0.0

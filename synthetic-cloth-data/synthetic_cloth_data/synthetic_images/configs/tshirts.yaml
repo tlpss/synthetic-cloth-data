@@ -3,7 +3,7 @@ defaults:
   - renderer: cycles
   - cloth_mesh: default
   - cloth_material: hsv
-  - surface: hsv
+  - surface: polyhaven
   - distractors: default
   - _self_
 

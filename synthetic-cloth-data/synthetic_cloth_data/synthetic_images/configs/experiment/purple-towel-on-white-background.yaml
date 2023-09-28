@@ -2,6 +2,7 @@
 
 defaults:
   - override /cloth_material: hsv
+  - override /surface: hsv
 
 relative_dataset_path: synthetic_images/TOWEL/07-purple-towel-on-white
 
