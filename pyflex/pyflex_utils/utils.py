@@ -156,7 +156,12 @@ class ParticleGrasper:
 
 
 def create_pyflex_cloth_scene_config(
-    dynamic_friction: float = 0.75, particle_friction: float = 1.0, static_friction: float = 0.0, drag: float = 0.002
+    dynamic_friction: float = 0.75,
+    particle_friction: float = 1.0,
+    static_friction: float = 0.0,
+    drag: float = 0.002,
+    particle_radius: float = 0.02,
+    solid_rest_distance: float = 0.006,
 ):
 
     # default values taken from Cloth Funnels codebase for now.
@@ -173,9 +178,9 @@ def create_pyflex_cloth_scene_config(
         },
         "scene_config": {
             "scene_id": 0,  # the Empty Scene.
-            "particle_radius": 0.015,  # particle radius
+            "particle_radius": particle_radius,  # particle radius
             "collision_distance": 0.0005,  # collision distance between particles and shapes (such as ground surface)
-            "solid_rest_distance": 0.013,  # rest distance for solid particles -> a.o. 'cloth thickness' for self collisions, best close to edge lengths
+            "solid_rest_distance": solid_rest_distance,  # rest distance for solid particles -> a.o. 'cloth thickness' for self collisions, best close to edge lengths
             "dynamic_friction": dynamic_friction,  # friction between cloth and rigid objects
             "particle_friction": particle_friction,  # friction between cloth particles
             "static_friction": static_friction,  # friction between rigid objects
@@ -262,7 +267,7 @@ def load_cloth_mesh_in_simulator(
     cloth_stretch_stiffness: float = 0.6,
     cloth_bending_stiffness: float = 0.0,
     cloth_shear_stiffness: float = 0.0,
-    cloth_mass: float = 20.0,
+    cloth_mass: float = 1.0,  # lower -> drag makes free fall slower
 ):
     """loads a cloth mesh in the simulator and creates a particle system with stretch constraints between the 1-ring neighbours and bending constraints between the 2-ring neighbours.
     as in the Nivida Flex docs. The resting state of all constraints is set to the initial mesh configuration.

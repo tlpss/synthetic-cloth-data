@@ -27,8 +27,8 @@ logger = loguru.logger
 class DeformationConfig:
     max_fold_distance: float = 0.6  # should allow to fold the cloth in half
 
-    max_bending_stiffness: float = 0.02  # higher becomes unrealistic
-    max_stretch_stiffness: float = 1.0
+    max_bending_stiffness: float = 0.04  # higher becomes unrealistic
+    max_stretch_stiffness: float = 2.0
     max_drag: float = 0.002  # higher -> cloth will start to fall down very sloooow
     max_orientation_angle: float = np.pi / 4  # higher will make the cloth more crumpled
 
@@ -47,12 +47,15 @@ def deform_mesh(
     static_friction = np.random.uniform(0.3, 1.0)
     dynamic_friction = np.random.uniform(0.3, 1.0)
     particle_friction = np.random.uniform(0.3, 1.0)
+    # drag is important to create some high frequency wrinkles
     drag = np.random.uniform(0.0, deformation_config.max_drag)
     config = create_pyflex_cloth_scene_config(
         static_friction=static_friction,
         dynamic_friction=dynamic_friction,
         particle_friction=particle_friction,
         drag=drag,
+        particle_radius=0.02,
+        solid_rest_distance=0.006,
     )
     pyflex.set_scene(0, config["scene_config"])
     pyflex.set_camera_params(config["camera_params"][config["camera_name"]])
@@ -61,10 +64,16 @@ def deform_mesh(
 
     # 0.5 is arbitrary but we don't want too much stretching
     stretch_stiffness = np.random.uniform(0.5, deformation_config.max_stretch_stiffness)
-    bend_stiffness = np.random.uniform(0.0, deformation_config.max_bending_stiffness)
+    bend_stiffness = np.random.uniform(0.01, deformation_config.max_bending_stiffness)
+    logger.debug(f"stretch stiffness: {stretch_stiffness}")
+    logger.debug(f"bend stiffness: {bend_stiffness}")
+
     cloth_vertices, _ = load_cloth_mesh_in_simulator(
-        undeformed_mesh_path, cloth_stretch_stiffness=stretch_stiffness, cloth_bending_stiffness=bend_stiffness
+        undeformed_mesh_path,
+        cloth_stretch_stiffness=stretch_stiffness,
+        cloth_bending_stiffness=bend_stiffness,
     )
+
     n_particles = len(cloth_vertices)
     pyflex_stepper = PyFlexStepWrapper()
     cloth_system = ClothParticleSystem(n_particles, pyflex_stepper=pyflex_stepper)
@@ -99,7 +108,7 @@ def deform_mesh(
 
     # drop mesh
     # tolerance empirically determined
-    wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper, max_steps=200, tolerance=0.08)
+    wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper, max_steps=500, tolerance=0.05)
 
     # fold towards a random point around the grasp point
     if np.random.uniform() < deformation_config.fold_probability:
@@ -123,13 +132,13 @@ def deform_mesh(
         center_direction = np.arctan2(cloth_center[2] - vertex_position[2], cloth_center[0] - vertex_position[0])
 
         # 70% of time wihtin pi/3 of the center direction. folds outside of the mesh are less interesting.
-        fold_direction = np.random.normal(center_direction, np.pi / 3)
+        fold_direction = np.random.normal(center_direction, np.pi / 6)
 
         fold_vector = np.array([np.cos(fold_direction), 0, np.sin(fold_direction)]) * fold_distance
         logger.debug(f"fold vector: {fold_vector}")
 
         # don't fold all the way, as that makes the sim 'force it back to flat' due to the inifite weight of the grasped particle
-        grasper.circular_fold_particle(fold_vector, np.pi * 0.8)
+        grasper.circular_fold_particle(fold_vector, np.pi * 0.9)
         grasper.release_particle()
 
         if np.random.uniform() < deformation_config.flip_probability:
@@ -152,13 +161,6 @@ def deform_mesh(
     create_obj_with_new_vertex_positions_the_hacky_way(
         cloth_system.get_positions(), undeformed_mesh_path, target_mesh_path
     )
-
-    logger.debug(f"static friction: {static_friction}")
-    logger.debug(f"dynamic friction: {dynamic_friction}")
-    logger.debug(f"particle friction: {particle_friction}")
-    logger.debug(f"stretch stiffness: {stretch_stiffness}")
-    logger.debug(f"bend stiffness: {bend_stiffness}")
-    logger.debug(f"drag: {drag}")
 
     # cannot use this multiple times in the same process (segfault)
     # so start in new process, in which case there is no need to actually call the clean since all memory will be released anyways.

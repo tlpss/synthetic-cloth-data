@@ -127,7 +127,7 @@ def triangulate(blender_object: bpy.types.Object):
         "vertices": vertices,
         "segments": np.array([[e.vertices[0], e.vertices[1]] for e in edges]),
     }
-    area = 0.0001
+    area = 0.00005
     triangle_output = triangle.triangulate(triangle_input, f"qpa{area:.32f}")
     vertices = triangle_output["vertices"]
     vertices = np.concatenate([vertices, np.zeros((len(vertices), 1))], axis=1)

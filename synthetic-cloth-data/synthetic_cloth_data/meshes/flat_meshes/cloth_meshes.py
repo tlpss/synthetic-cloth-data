@@ -27,7 +27,7 @@ from synthetic_cloth_data.utils import CLOTH_TYPES
 
 
 def sample_towel_config() -> TowelTemplateConfig:
-    length = np.random.uniform(0.5, 1)
+    length = np.random.uniform(0.4, 0.9)
     width = np.random.exponential(1.0)
     width = np.clip(width, 0, 1)
     width = length - width / 3 * length
@@ -86,7 +86,7 @@ def sample_towel_bezier_config() -> BezierConfig:
     bezier_configs = []
     for i in range(4):  # 4 edges for towels
         end = (i + 1) % 4
-        bezier_configs.append(BezierConfig(i, end, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.03, 0.03)))
+        bezier_configs.append(BezierConfig(i, end, np.random.uniform(-0.0, 0.0), np.random.uniform(-0.0, 0.0)))
     return bezier_configs
 
 
@@ -130,7 +130,7 @@ def sample_tshirt_bezier_config() -> BezierConfig:
 def sample_towel_bevel_configs(keypoint_ids: List[int]):
     bevel_configs = []
     for id in keypoint_ids:
-        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.015)))
+        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.0)))
     return bevel_configs
 
 
@@ -189,8 +189,6 @@ def generate_cloth_object(type: CLOTH_TYPES):
     cloth_vertices = apply_bezier_curves_to_mesh(geometric_vertices, bezier_configs)
     new_keypoint_ids = find_nearest_vertex_ids(cloth_vertices, list(keypoints.values()))
     keypoints = {k: cloth_vertices[v] for k, v in zip(keypoints.keys(), new_keypoint_ids)}
-
-    # triangulate
 
     blender_object = create_blender_object_from_vertices(str.lower(type.name), cloth_vertices)
 
