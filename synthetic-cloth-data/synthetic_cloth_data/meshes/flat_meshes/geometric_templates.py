@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     bpy.ops.object.delete()  # Delete default cube
 
-    vertices, keypoints = create_short_vertices(ShortsMeshConfig())
+    vertices, keypoints = create_towel_vertices(TowelTemplateConfig())
     print(vertices)
     edges = []
     faces = [[i for i in range(len(vertices))]]

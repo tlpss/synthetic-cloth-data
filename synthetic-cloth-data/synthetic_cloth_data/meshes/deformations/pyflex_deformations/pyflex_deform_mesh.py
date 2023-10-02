@@ -29,7 +29,7 @@ class DeformationConfig:
 
     max_bending_stiffness: float = 0.04  # higher becomes unrealistic
     max_stretch_stiffness: float = 2.0
-    max_drag: float = 0.002  # higher -> cloth will start to fall down very sloooow
+    max_drag: float = 0.00001  # higher -> cloth will start to fall down very sloooow
     max_orientation_angle: float = np.pi / 4  # higher will make the cloth more crumpled
 
     fold_probability: float = 0.6
@@ -48,14 +48,14 @@ def deform_mesh(
     dynamic_friction = np.random.uniform(0.3, 1.0)
     particle_friction = np.random.uniform(0.3, 1.0)
     # drag is important to create some high frequency wrinkles
-    drag = np.random.uniform(0.0, deformation_config.max_drag)
+    drag = np.random.uniform(deformation_config.max_drag / 5, deformation_config.max_drag)
     config = create_pyflex_cloth_scene_config(
         static_friction=static_friction,
         dynamic_friction=dynamic_friction,
         particle_friction=particle_friction,
         drag=drag,
-        particle_radius=0.02,
-        solid_rest_distance=0.006,
+        particle_radius=0.015,
+        solid_rest_distance=0.005,
     )
     pyflex.set_scene(0, config["scene_config"])
     pyflex.set_camera_params(config["camera_params"][config["camera_name"]])
@@ -152,9 +152,9 @@ def deform_mesh(
             )
             # lift and drop
             cloth_system.set_positions(cloth_system.get_positions() + np.array([0, 0.5, 0]))
-            wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper)
+            wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper, tolerance=0.05)
 
-    wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper, max_steps=200)
+    wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper, max_steps=200, tolerance=0.05)
     cloth_system.center_object()
 
     # export mesh
