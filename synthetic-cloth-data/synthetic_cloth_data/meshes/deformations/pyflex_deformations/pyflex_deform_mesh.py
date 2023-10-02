@@ -27,14 +27,14 @@ logger = loguru.logger
 class DeformationConfig:
     max_fold_distance: float = 0.6  # should allow to fold the cloth in half
 
-    max_bending_stiffness: float = 0.04  # higher becomes unrealistic
+    max_bending_stiffness: float = 0.025  # higher becomes unrealistic
     max_stretch_stiffness: float = 2.0
     max_drag: float = 0.00001  # higher -> cloth will start to fall down very sloooow
     max_orientation_angle: float = np.pi / 4  # higher will make the cloth more crumpled
 
     fold_probability: float = 0.6
     grasp_keypoint_vertex_probability: float = 0.5
-    flip_probability: float = 0.5
+    flip_probability: float = 0.4
 
 
 def deform_mesh(
@@ -54,8 +54,8 @@ def deform_mesh(
         dynamic_friction=dynamic_friction,
         particle_friction=particle_friction,
         drag=drag,
-        particle_radius=0.015,
-        solid_rest_distance=0.005,
+        particle_radius=0.015,  # keep radius close to particle rest distances in mesh to avoid weird behaviors
+        solid_rest_distance=0.01,  # mesh triangulation -> approx 1cm edges lengths
     )
     pyflex.set_scene(0, config["scene_config"])
     pyflex.set_camera_params(config["camera_params"][config["camera_name"]])
