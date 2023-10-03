@@ -201,7 +201,9 @@ def does_bsdf_have_normal_input(material: bpy.types.Material) -> bool:
     return len(material.node_tree.nodes["Principled BSDF"].inputs["Normal"].links) > 0
 
 
-def _add_noise_texture_to_bsdf_normals(material: bpy.types.Material, scale, bump_strength) -> bpy.types.Material:
+def _add_noise_texture_to_bsdf_normals(
+    material: bpy.types.Material, scale, bump_distance: float
+) -> bpy.types.Material:
     node_tree = material.node_tree
     nodes = node_tree.nodes
     links = node_tree.links
@@ -226,7 +228,7 @@ def _add_noise_texture_to_bsdf_normals(material: bpy.types.Material, scale, bump
     links.new(texture_mapping_node.outputs["Vector"], noise_node.inputs["Vector"])
 
     bump_node = nodes.new(type="ShaderNodeBump")
-    bump_node.inputs["Strength"].default_value = bump_strength
+    bump_node.inputs["Distance"].default_value = bump_distance
     links.new(bump_node.inputs["Height"], noise_node.outputs["Fac"])
 
     if normal_input_node:
@@ -237,7 +239,7 @@ def _add_noise_texture_to_bsdf_normals(material: bpy.types.Material, scale, bump
 
 
 def add_xy_wave_pattern_to_bsdf_normals(
-    material: bpy.types.Material, wave_scale: float, wave_distortion: float, bump_strength: float
+    material: bpy.types.Material, wave_scale: float, wave_distortion: float, bump_distance: float
 ) -> bpy.types.Material:
     node_tree = material.node_tree
     nodes = node_tree.nodes
@@ -280,7 +282,7 @@ def add_xy_wave_pattern_to_bsdf_normals(
     links.new(color_mixer.outputs["Color"], color_ramp_node.inputs["Fac"])
 
     bump_node = nodes.new(type="ShaderNodeBump")
-    bump_node.inputs["Strength"].default_value = bump_strength
+    bump_node.inputs["Distance"].default_value = bump_distance
     links.new(bump_node.inputs["Height"], color_ramp_node.outputs["Color"])
     if normal_input_node:
         links.new(bump_node.inputs["Normal"], normal_input_node.outputs[normal_input_node_socket])
@@ -298,12 +300,12 @@ def add_normals_to_base_color_of_bsdf(material: bpy.types.Material) -> bpy.types
 @dataclasses.dataclass
 class FabricMaterialConfig:
     wave_scale: float = 200
-    wave_distortion: float = 1.0
-    wave_strength: float = 0.3
-    low_frequency_noise_scale: float = 30
-    low_frequency_noise_strength: float = 0.15
+    wave_distortion: float = 3.0
+    wave_distance: float = 0.004
+    low_frequency_noise_scale: float = 20
+    low_frequency_noise_distance: float = 0.001
     high_frequency_noise_scale: float = 200
-    high_frequency_noise_strength: float = 0.2
+    high_frequency_distance: float = 0.005
 
 
 def add_fabric_material_to_bsdf(material: bpy.types.Material, config: FabricMaterialConfig) -> bpy.types.Material:
@@ -319,16 +321,16 @@ def add_fabric_material_to_bsdf(material: bpy.types.Material, config: FabricMate
 
     # add low-freq noise to create some additional wrinkles etc
     material = _add_noise_texture_to_bsdf_normals(
-        material, config.low_frequency_noise_scale, config.low_frequency_noise_strength
+        material, config.low_frequency_noise_scale, config.low_frequency_noise_distance
     )
     # add high-freq noise to mimick 'rag-like' fabric patterns
     material = _add_noise_texture_to_bsdf_normals(
-        material, config.high_frequency_noise_scale, config.high_frequency_noise_strength
+        material, config.high_frequency_noise_scale, config.high_frequency_distance
     )
 
     # add wave pattern to mimick 'grid-like' fabric patterns
     material = add_xy_wave_pattern_to_bsdf_normals(
-        material, config.wave_scale, config.wave_distortion, config.wave_strength
+        material, config.wave_scale, config.wave_distortion, config.wave_distance
     )
 
     return material

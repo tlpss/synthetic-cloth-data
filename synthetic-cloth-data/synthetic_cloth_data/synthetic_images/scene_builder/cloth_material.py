@@ -95,11 +95,11 @@ def _add_towel_material_to_mesh(config: TowelMaterialConfig, cloth_object: bpy.t
 
     # these are manually tuned to provide appropriate noise levels
     fabric_material_config = FabricMaterialConfig()
-    fabric_material_config.high_frequency_noise_strength = np.random.uniform(0.1, 0.4)
-    fabric_material_config.low_frequency_noise_strength = np.random.uniform(0.02, 0.15)
-    fabric_material_config.high_frequency_noise_scale = np.random.uniform(200, 400)
-    fabric_material_config.low_frequency_noise_scale = np.random.uniform(10, 30)
-    fabric_material_config.wave_strength = np.random.uniform(0.0, 0.4)
+    fabric_material_config.high_frequency_distance = np.random.uniform(0.01, 0.4)
+    fabric_material_config.low_frequency_noise_distance = np.random.uniform(0.0005, 0.05)
+    fabric_material_config.high_frequency_noise_scale = np.random.uniform(30, 150)
+    fabric_material_config.low_frequency_noise_scale = np.random.uniform(2, 10)
+    fabric_material_config.wave_distance = np.random.uniform(0.0, 0.02)
     fabric_material_config.wave_scale = np.random.uniform(50, 150)
     material = add_fabric_material_to_bsdf(material, fabric_material_config)
     cloth_object.data.materials[0] = material
@@ -115,12 +115,13 @@ def _add_rgb_material_to_mesh(config: HSVMaterialConfig, cloth_object: bpy.types
     material = create_evenly_colored_material(rgba)
     material = modify_bsdf_to_cloth(material)
 
+    # these are manually tuned to provide appropriate noise levels
     fabric_material_config = FabricMaterialConfig()
-    fabric_material_config.high_frequency_noise_strength = np.random.uniform(0.1, 0.4)
-    fabric_material_config.low_frequency_noise_strength = np.random.uniform(0.02, 0.15)
-    fabric_material_config.high_frequency_noise_scale = np.random.uniform(200, 400)
-    fabric_material_config.low_frequency_noise_scale = np.random.uniform(10, 30)
-    fabric_material_config.wave_strength = np.random.uniform(0.0, 0.4)
+    fabric_material_config.high_frequency_distance = np.random.uniform(0.01, 0.4)
+    fabric_material_config.low_frequency_noise_distance = np.random.uniform(0.0005, 0.05)
+    fabric_material_config.high_frequency_noise_scale = np.random.uniform(30, 150)
+    fabric_material_config.low_frequency_noise_scale = np.random.uniform(2, 10)
+    fabric_material_config.wave_distance = np.random.uniform(0.0, 0.02)
     fabric_material_config.wave_scale = np.random.uniform(50, 150)
     material = add_fabric_material_to_bsdf(material, fabric_material_config)
 
