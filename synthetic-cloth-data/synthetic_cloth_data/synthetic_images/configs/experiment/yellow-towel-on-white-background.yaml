@@ -7,7 +7,7 @@ defaults:
 relative_dataset_path: synthetic_images/TOWEL/08-yellow-towel-on-white
 
 cloth_mesh:
-  mesh_path: deformed_meshes/TOWEL/03-smaller
+  mesh_path: deformed_meshes/TOWEL/04-finer
 
 camera:
   minimal_camera_height: 1.1 # keep camera rather vertical
