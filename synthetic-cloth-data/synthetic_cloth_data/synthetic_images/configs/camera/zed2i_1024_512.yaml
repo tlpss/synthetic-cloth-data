@@ -1,0 +1,4 @@
+defaults:
+  - zed2i
+horizontal_resolution: 1024
+vertical_resolution: 512

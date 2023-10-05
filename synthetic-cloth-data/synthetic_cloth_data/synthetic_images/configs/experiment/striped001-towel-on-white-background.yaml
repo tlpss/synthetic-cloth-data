@@ -1,0 +1,30 @@
+# @package _global_
+
+defaults:
+  - override /cloth_material: striped001
+  - override /surface: hsv
+  - override /camera: zed2i_1024_512
+
+relative_dataset_path: synthetic_images/TOWEL/10-yellow-towel-on-white
+
+cloth_mesh:
+  mesh_path: deformed_meshes/TOWEL/04-finer
+
+camera:
+  minimal_camera_height: 1.1 # keep camera rather vertical
+  max_sphere_radius: 1.2
+
+surface:
+  size_range: [4,4]
+  h_range: [0.1,0.1]
+  s_range: [0.07,0.07]
+  v_range: [0.6,0.6]
+
+
+distractors:
+  max_distractors: 0
+
+
+renderer:
+  exposure_min: 0.0
+  exposure_max: 0.0
