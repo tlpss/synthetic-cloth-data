@@ -52,13 +52,17 @@ def create_coco_dataset_from_intermediates(relative_target_directory, relative_s
     # This could be a seperate script that just looks for directories with the right name
     for data_sample_dir in data_samples:
         image_json_path = f"{source_directory}/{data_sample_dir}/coco_image.json"
+        annotation_path = f"{source_directory}/{data_sample_dir}/coco_annotation.json"
+
+        # sometimes, for some reason, one of the outputs is missing. We skip those samples for now.
+        if not os.path.exists(image_json_path) or not os.path.exists(annotation_path):
+            print(f"skipping {data_sample_dir} because {image_json_path} or {annotation_path} does not exist")
+            continue
 
         with open(image_json_path, "r") as file:
             coco_image = CocoImage(**json.load(file))
         images.append(coco_image)
 
-        # use glob to find all annotation files
-        annotation_path = f"{source_directory}/{data_sample_dir}/coco_annotation.json"
         with open(annotation_path, "r") as file:
             coco_annotation = CocoKeypointAnnotation(**json.load(file))
         annotations.append(coco_annotation)
