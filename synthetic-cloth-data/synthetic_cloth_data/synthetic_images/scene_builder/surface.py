@@ -86,19 +86,20 @@ def add_textured_surface_to_scene(config: PolyHavenTexturedSurfaceConfig) -> bpy
         multiply_node.inputs["Color2"].default_value = (*base_rgb, 1.0)
 
         # map original input of the BSDF base color to the multiply node
-        color_input_node = material.node_tree.nodes["Principled BSDF"].inputs["Base Color"].links[0].from_node
+        # cannot search on "Name" because they can have suffixes like ".001"
+        for node in material.node_tree.nodes:
+            if isinstance(node, bpy.types.ShaderNodeBsdfPrincipled):
+                break
+
+        bsdf_node = node
+        color_input_node = bsdf_node.inputs["Base Color"].links[0].from_node
         color_input_node_socket = (
-            material.node_tree.nodes["Principled BSDF"]
-            .inputs["Base Color"]
-            .links[0]
-            .from_socket.identifier  # use identifier, names are not unique!
-        )
+            bsdf_node.inputs["Base Color"].links[0].from_socket.identifier
+        )  # use identifier, names are not unique!
         material.node_tree.links.new(color_input_node.outputs[color_input_node_socket], multiply_node.inputs["Color1"])
 
         # map the output of the multiply node to the BSDF base color
-        material.node_tree.links.new(
-            material.node_tree.nodes["Principled BSDF"].inputs["Base Color"], multiply_node.outputs["Color"]
-        )
+        material.node_tree.links.new(bsdf_node.inputs["Base Color"], multiply_node.outputs["Color"])
 
         # disable actual mesh displacements as they change the geometry of the surface
         # and are not used in collision checking, which can cause the cloth to become 'invisible' in renders
