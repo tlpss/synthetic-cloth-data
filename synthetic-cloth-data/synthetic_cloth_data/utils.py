@@ -4,12 +4,14 @@ import subprocess
 
 
 class CLOTH_TYPES(str, enum.Enum):
+    NONE = "NONE"  # dummy for non-cloth items with same codebase
     TOWEL = "TOWEL"
     SHORTS = "SHORTS"
     TSHIRT = "TSHIRT"
 
 
 CLOTH_TYPE_TO_COCO_CATEGORY_ID = {
+    CLOTH_TYPES.NONE.name: 0,
     CLOTH_TYPES.TOWEL.name: 0,
     CLOTH_TYPES.SHORTS.name: 1,
     CLOTH_TYPES.TSHIRT.name: 2,

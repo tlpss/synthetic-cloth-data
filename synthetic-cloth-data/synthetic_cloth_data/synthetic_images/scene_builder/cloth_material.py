@@ -40,6 +40,11 @@ class TowelStriped001(ClothMaterialConfig):
     pass
 
 
+@dataclasses.dataclass
+class LegoBatteryMaterialConfig(ClothMaterialConfig):
+    pass
+
+
 def add_material_to_cloth_mesh(config: ClothMaterialConfig, cloth_object: bpy.types.Object, cloth_type: CLOTH_TYPES):
     if isinstance(config, TowelMaterialConfig):
         _add_towel_material_to_mesh(config, cloth_object)
@@ -47,8 +52,11 @@ def add_material_to_cloth_mesh(config: ClothMaterialConfig, cloth_object: bpy.ty
         _add_rgb_material_to_mesh(config, cloth_object)
 
     # TODO: this needs to become more generic.
-    if isinstance(config, TowelStriped001):
+    elif isinstance(config, TowelStriped001):
         _001_striped_towel(cloth_object)
+
+    elif isinstance(config, LegoBatteryMaterialConfig):
+        pass
 
 
 def _add_towel_material_to_mesh(config: TowelMaterialConfig, cloth_object: bpy.types.Object):

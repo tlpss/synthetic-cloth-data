@@ -1,0 +1,23 @@
+defaults:
+  - camera: zed2i_1024_512
+  - renderer: cycles
+  - cloth_mesh: default
+  - surface: polyhaven
+  - distractors: default
+  - _self_
+
+cloth_type: NONE
+id: 5
+relative_dataset_path: synthetic_images/LEGO-battery/01
+
+cloth_mesh:
+  mesh_path: flat_meshes/LEGO-battery
+  solidify: False
+  subdivide: False
+
+cloth_material:
+  _target_: synthetic_cloth_data.synthetic_images.scene_builder.cloth_material.LegoBatteryMaterialConfig
+
+camera:
+  minimal_camera_height: 0.1
+  max_sphere_radius: 0.4
