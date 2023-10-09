@@ -33,6 +33,13 @@ short_category = CocoKeypointCategory(
     keypoints=SHORT_KEYPOINTS,
 )
 
+lego_category = CocoKeypointCategory(
+    supercategory="object",
+    id=444,
+    name="lego",
+    keypoints=["knob", "top-left", "top-right", "center-front", "center-back"],
+)
+
 
 def create_coco_dataset_from_intermediates(relative_target_directory, relative_source_directory: str):
 
