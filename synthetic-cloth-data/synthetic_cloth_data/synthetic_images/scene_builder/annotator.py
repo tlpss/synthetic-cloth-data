@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import json
 import os
 
@@ -9,13 +10,27 @@ import numpy as np
 from airo_dataset_tools.data_parsers.coco import CocoImage, CocoKeypointAnnotation
 from airo_dataset_tools.segmentation_mask_converter import BinarySegmentationMask
 from bpy_extras.object_utils import world_to_camera_view
+from synthetic_cloth_data.meshes.utils.n_ring_neighbours import get_n_ring_neighbours, get_up_to_n_ring_neighbours
 from synthetic_cloth_data.synthetic_images.scene_builder.utils.visible_vertices import (
     is_vertex_occluded_for_scene_camera,
 )
 from synthetic_cloth_data.utils import CLOTH_TYPE_TO_COCO_CATEGORY_ID, TSHIRT_KEYPOINTS
 
 
-def create_coco_annotations(
+def _is_vertex_up_to_n_ring_visible(object, vertex_id, n_ring):
+    neighbours = get_up_to_n_ring_neighbours(object, vertex_id, n_ring)
+    for neighbour_id in neighbours:
+        if is_vertex_occluded_for_scene_camera(object.matrix_world @ object.data.vertices[neighbour_id].co):
+            return False
+    return True
+
+
+@dataclasses.dataclass
+class CocoKeypointsAnnotatorConfig:
+    keypoints_n_ring_neighbours: int = 2
+
+
+def create_coco_annotations(  # noqa: C901
     cloth_type, output_dir: str, coco_id: int, cloth_object: bpy.types.Object, keypoint_vertex_dict: dict
 ):
     image_name = "rgb"
@@ -37,6 +52,42 @@ def create_coco_annotations(
     keypoints_3D = [
         cloth_object.matrix_world @ cloth_object.data.vertices[vid].co for vid in keypoint_vertex_dict.values()
     ]
+
+    # check if cloth object has a solidify modifier and remove it temporarily because it affects the ray cast and hence the visibility check.
+    solidify_modifier = None
+    is_solidify_modifier = [modifier.type == "SOLIDIFY" for modifier in cloth_object.modifiers]
+    if any(is_solidify_modifier):
+        solidify_modifier = cloth_object.modifiers[is_solidify_modifier.index(True)]
+        solidifier_thickness = solidify_modifier.thickness
+        solidify_modifier.thickness = 0.0
+
+    # visibility N-ring:
+    # for each keypoint, check if it is visible from the camera.
+    # if it is not visible, check its N-ring neighbours if they are visible.
+    # if they are visible, use the 3D position of the visible neighbour as the 3D position of the keypoint.
+    # if none of the neighbours are visible, use the 3D position of the keypoint as the 3D position of the keypoint.
+    if CocoKeypointsAnnotatorConfig().keypoints_n_ring_neighbours > 0:
+        for kp_idx, vertex_id in enumerate(keypoint_vertex_dict.values()):
+            if is_vertex_occluded_for_scene_camera(
+                cloth_object.matrix_world @ cloth_object.data.vertices[vertex_id].co
+            ):
+                print(f"keypoint {kp_idx} is occluded, searching for visible neighbours")
+                visible_neighbours = []
+                for n in range(1, CocoKeypointsAnnotatorConfig().keypoints_n_ring_neighbours + 1):
+                    n_ring_neighbours = get_n_ring_neighbours(cloth_object, vertex_id, n_ring=n)
+                    for neighbour_id in n_ring_neighbours:
+                        if is_vertex_occluded_for_scene_camera(
+                            cloth_object.matrix_world @ cloth_object.data.vertices[neighbour_id].co
+                        ):
+                            continue
+                        else:
+                            print(neighbour_id)
+                            visible_neighbours.append(neighbour_id)
+                if len(visible_neighbours) > 2:
+                    vertex_id = visible_neighbours[0]
+                    print(f"keypoint {kp_idx} is occluded, but has visible neighbours, using {vertex_id} as keypoint")
+                    keypoints_3D[kp_idx] = cloth_object.matrix_world @ cloth_object.data.vertices[neighbour_id].co
+
     scene = bpy.context.scene
     camera = bpy.context.scene.camera
 
@@ -54,14 +105,6 @@ def create_coco_annotations(
         keypoints_2D, keypoints_3D = _order_towel_keypoints(keypoints_2D, keypoints_3D, bbox)
     if cloth_type == "TSHIRT":
         keypoints_2D, keypoints_3D = _order_tshirt_keypoints(keypoints_2D, keypoints_3D, bbox)
-
-    # check if cloth object has a solidify modifier and remove it temporarily because it affects the ray cast and hence the visibility check.
-    solidify_modifier = None
-    is_solidify_modifier = [modifier.type == "SOLIDIFY" for modifier in cloth_object.modifiers]
-    if any(is_solidify_modifier):
-        solidify_modifier = cloth_object.modifiers[is_solidify_modifier.index(True)]
-        solidifier_thickness = solidify_modifier.thickness
-        solidify_modifier.thickness = 0.0
 
     # gather the keypoints
     coco_keypoints = []
@@ -86,7 +129,7 @@ def create_coco_annotations(
 
         # for debugging:
         # add 3D sphere around each keypoint
-        # bpy.ops.mesh.primitive_uv_sphere_add(radius=0.01, location=keypoint_3D)
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.001, location=keypoint_3D)
 
     # add the solidifier back if required
     if solidify_modifier is not None:
