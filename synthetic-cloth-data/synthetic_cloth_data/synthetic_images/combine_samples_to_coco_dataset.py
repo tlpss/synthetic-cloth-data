@@ -62,17 +62,19 @@ def create_coco_dataset_from_intermediates(relative_target_directory, relative_s
         annotation_path = f"{source_directory}/{data_sample_dir}/coco_annotation.json"
 
         # sometimes, for some reason, one of the outputs is missing. We skip those samples for now.
-        if not os.path.exists(image_json_path) or not os.path.exists(annotation_path):
-            print(f"skipping {data_sample_dir} because {image_json_path} or {annotation_path} does not exist")
-            continue
+        if not os.path.exists(image_json_path):
+            print(f"skipping {data_sample_dir} because {image_json_path} does not exist")
+        else:
+            with open(image_json_path, "r") as file:
+                coco_image = CocoImage(**json.load(file))
+            images.append(coco_image)
 
-        with open(image_json_path, "r") as file:
-            coco_image = CocoImage(**json.load(file))
-        images.append(coco_image)
-
-        with open(annotation_path, "r") as file:
-            coco_annotation = CocoKeypointAnnotation(**json.load(file))
-        annotations.append(coco_annotation)
+        if not os.path.exists(annotation_path):
+            print(f"not adding annotation because {annotation_path} does not exist")
+        else:
+            with open(annotation_path, "r") as file:
+                coco_annotation = CocoKeypointAnnotation(**json.load(file))
+            annotations.append(coco_annotation)
 
     # copy images and make jpg
     print("copying images")

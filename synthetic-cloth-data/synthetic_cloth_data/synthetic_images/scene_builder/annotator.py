@@ -34,6 +34,17 @@ def create_coco_annotations(
     image_height, image_width = segmentation_mask.shape[0], segmentation_mask.shape[1]
     coco_image = CocoImage(file_name=image_path, height=image_height, width=image_width, id=coco_id)
 
+    # Save CocoImage to disk as json
+    coco_image_json = "coco_image.json"
+    coco_image_json_path = os.path.join(output_dir, coco_image_json)
+    with open(coco_image_json_path, "w") as file:
+        json.dump(coco_image.dict(exclude_none=True), file, indent=4)
+
+    if segmentation.area < 1.0:
+        # this object is not visible in the image
+        # so no annotation needs to be added.
+        return
+
     keypoints_3D = [
         cloth_object.matrix_world @ cloth_object.data.vertices[vid].co for vid in keypoint_vertex_dict.values()
     ]
@@ -104,12 +115,6 @@ def create_coco_annotations(
         bbox=bbox,
         iscrowd=0,
     )
-
-    # Save CocoImage to disk as json
-    coco_image_json = "coco_image.json"
-    coco_image_json_path = os.path.join(output_dir, coco_image_json)
-    with open(coco_image_json_path, "w") as file:
-        json.dump(coco_image.dict(exclude_none=True), file, indent=4)
 
     # Save CocoKeypointAnnotation to disk as json
     coco_annotation_json = "coco_annotation.json"
