@@ -37,7 +37,7 @@ lego_category = CocoKeypointCategory(
     supercategory="object",
     id=444,
     name="lego",
-    keypoints=["knob", "top-left", "top-right", "center-front", "center-back"],
+    keypoints=["knob", "top-right", "top-left", "center-front", "center-back"],
 )
 
 
