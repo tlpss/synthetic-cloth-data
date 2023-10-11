@@ -1,14 +1,14 @@
 defaults:
-  - camera: zed2i_1024_512
+  - camera: zed2i_512_256
   - renderer: cycles
   - cloth_mesh: default
   - surface: polyhaven
   - distractors: default
   - _self_
 
-cloth_type: NONE
+cloth_type: LEGO
 id: 5
-relative_dataset_path: synthetic_images/LEGO-battery/01
+relative_dataset_path: synthetic_images/LEGO-battery/02-better-obj
 
 cloth_mesh:
   mesh_path: flat_meshes/LEGO-battery
