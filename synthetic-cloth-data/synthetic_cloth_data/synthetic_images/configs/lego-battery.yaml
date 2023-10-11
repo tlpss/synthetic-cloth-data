@@ -16,7 +16,7 @@ cloth_mesh:
   subdivide: False
 
 cloth_material:
-  _target_: synthetic_cloth_data.synthetic_images.scene_builder.cloth_material.LegoBatteryMaterialConfig
+  _target_: synthetic_cloth_data.synthetic_images.scene_builder.cloth_material.PolyhavenMaterialConfig
 
 camera:
   minimal_camera_height: 0.1

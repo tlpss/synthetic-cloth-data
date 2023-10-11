@@ -1,6 +1,7 @@
 import dataclasses
 from typing import List
 
+import airo_blender as ab
 import bpy
 import numpy as np
 from synthetic_cloth_data.materials.common import (
@@ -13,6 +14,8 @@ from synthetic_cloth_data.materials.towels import (
     create_striped_material,
     modify_bsdf_to_cloth,
 )
+from synthetic_cloth_data.synthetic_images.assets.asset_snapshot_paths import POLYHAVEN_ASSETS_SNAPSHOT_RELATIVE_PATH
+from synthetic_cloth_data.synthetic_images.scene_builder.utils.assets import AssetConfig
 from synthetic_cloth_data.synthetic_images.scene_builder.utils.colors import hsv_to_rgb, sample_hsv_color
 from synthetic_cloth_data.utils import CLOTH_TYPES
 
@@ -45,6 +48,17 @@ class LegoBatteryMaterialConfig(ClothMaterialConfig):
     pass
 
 
+@dataclasses.dataclass
+class PolyhavenMaterials(AssetConfig):
+    asset_json_relative_path: str = POLYHAVEN_ASSETS_SNAPSHOT_RELATIVE_PATH
+    types: List[str] = dataclasses.field(default_factory=lambda: ["materials"])
+
+
+@dataclasses.dataclass
+class PolyhavenMaterialConfig(ClothMaterialConfig):
+    polyhaven_materials: PolyhavenMaterials = PolyhavenMaterials()
+
+
 def add_material_to_cloth_mesh(config: ClothMaterialConfig, cloth_object: bpy.types.Object, cloth_type: CLOTH_TYPES):
     if isinstance(config, TowelMaterialConfig):
         _add_towel_material_to_mesh(config, cloth_object)
@@ -54,6 +68,9 @@ def add_material_to_cloth_mesh(config: ClothMaterialConfig, cloth_object: bpy.ty
     # TODO: this needs to become more generic.
     elif isinstance(config, TowelStriped001):
         _001_striped_towel(cloth_object)
+
+    elif isinstance(config, PolyhavenMaterialConfig):
+        _add_polyhaven_material_to_object(config, cloth_object)
 
     elif isinstance(config, LegoBatteryMaterialConfig):
         pass
@@ -168,3 +185,49 @@ def _add_procedural_fabric_texture_to_bsdf(material):
     fabric_material_config.wave_scale = np.random.uniform(50, 150)
     material = add_fabric_material_to_bsdf(material, fabric_material_config)
     return material
+
+
+def _add_polyhaven_material_to_object(config: PolyhavenMaterialConfig, object: bpy.types.Object):
+
+    num_object_materials = len(object.material_slots)
+    for material_idx in range(num_object_materials):
+
+        material_dict = np.random.choice(config.polyhaven_materials.asset_list)
+        material = ab.load_asset(**material_dict)
+        assert isinstance(material, bpy.types.Material)
+
+        # add a color mix node before the principled BSDF color
+        # to randomize the base color hue
+
+        # use multiply to limit the change in brightness (which is always an issue with addition)
+        # colors should be close to (1,1,1) to avoid darkening the material too much (this is the issue with multiplying..)
+        # so set value to 1 and keep saturation low.
+        hue = np.random.uniform(0, 1)
+        saturation = np.random.uniform(0.0, 0.7)
+        value = 1.0
+        base_hsv = np.array([hue, saturation, value])
+        base_rgb = hsv_to_rgb(base_hsv)
+
+        multiply_node = material.node_tree.nodes.new("ShaderNodeMixRGB")
+        multiply_node.blend_type = "MULTIPLY"
+        multiply_node.inputs["Fac"].default_value = 1.0
+        multiply_node.inputs["Color2"].default_value = (*base_rgb, 1.0)
+
+        # map original input of the BSDF base color to the multiply node
+        # cannot search on "Name" because they can have suffixes like ".001"
+        for node in material.node_tree.nodes:
+            if isinstance(node, bpy.types.ShaderNodeBsdfPrincipled):
+                break
+
+        bsdf_node = node
+        color_input_node = bsdf_node.inputs["Base Color"].links[0].from_node
+        color_input_node_socket = (
+            bsdf_node.inputs["Base Color"].links[0].from_socket.identifier
+        )  # use identifier, names are not unique!
+        material.node_tree.links.new(color_input_node.outputs[color_input_node_socket], multiply_node.inputs["Color1"])
+
+        # map the output of the multiply node to the BSDF base color
+        material.node_tree.links.new(bsdf_node.inputs["Base Color"], multiply_node.outputs["Color"])
+
+        material.cycles.displacement_method = "BUMP"
+        object.data.materials[material_idx] = material
