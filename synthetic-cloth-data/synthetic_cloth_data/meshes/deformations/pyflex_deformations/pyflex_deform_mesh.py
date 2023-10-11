@@ -49,12 +49,14 @@ def deform_mesh(
     particle_friction = np.random.uniform(0.3, 1.0)
     # drag is important to create some high frequency wrinkles
     drag = np.random.uniform(deformation_config.max_drag / 5, deformation_config.max_drag)
+    # pyflex becomes unstable if radius is set to higher values (self-collisions)
+    # and rest_distance seems to be most stable if it is close to the highest edge lengths in the mesh.
     config = create_pyflex_cloth_scene_config(
         static_friction=static_friction,
         dynamic_friction=dynamic_friction,
         particle_friction=particle_friction,
         drag=drag,
-        particle_radius=0.015,  # keep radius close to particle rest distances in mesh to avoid weird behaviors
+        particle_radius=0.01,  # keep radius close to particle rest distances in mesh to avoid weird behaviors
         solid_rest_distance=0.01,  # mesh triangulation -> approx 1cm edges lengths
     )
     pyflex.set_scene(0, config["scene_config"])
