@@ -1,11 +1,12 @@
 # @package _global_
 deformation_config:
   max_drag: 0.0 # not necessary with all the self collisions
-  max_orientation_angle: 0.5 # np.pi /6, keep deformations small
+  max_orientation_angle: 1.0 # np.pi /3, keep deformations small
   fold_probability: 0.9
 
+
 mesh_dir: flat_meshes/TSHIRT/Cloth3D-1-flat
-output_dir: deformed_meshes/TSHIRT/pyflex/cloth3d-1-flat
+output_dir: deformed_meshes/TSHIRT/01-cloth3d-flat
 
 num_samples: 100
 start_id: 0

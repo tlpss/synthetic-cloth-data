@@ -9,8 +9,8 @@ defaults:
 
 
 cloth_type: TSHIRT
-id: 5
+id: 2
 relative_dataset_path: synthetic_images/TSHIRT/00
 
 cloth_mesh:
-  mesh_path: deformed_meshes/TSHIRT/pyflex/cloth3d
+  mesh_path: deformed_meshes/TSHIRT/00-cloth3d-1-flat
