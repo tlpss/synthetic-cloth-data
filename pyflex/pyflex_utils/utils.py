@@ -337,12 +337,12 @@ if __name__ == "__main__":
 
     # pyflex becomes unstable if radius is set to higher values (self-collisions)
     # and rest_distance seems to be most stable if it is close to the highest edge lengths in the mesh.
-    config = create_pyflex_cloth_scene_config(drag=0.0, particle_radius=0.01, solid_rest_distance=0.01)
+    config = create_pyflex_cloth_scene_config(drag=0.0, particle_radius=0.02, solid_rest_distance=0.02)
     pyflex.set_scene(config["scene_config"]["scene_id"], config["scene_config"])
     pyflex.set_camera_params(config["camera_params"][config["camera_name"]])
 
-    mesh_path = "/home/tlips/Documents/synthetic-cloth-data/pyflex/pyflex_utils/00421.obj"
-    # mesh_path = "/home/tlips/Documents/synthetic-cloth-data/pyflex/pyflex_utils/00421_flat.obj"
+    # mesh_path = "/home/tlips/Documents/synthetic-cloth-data/pyflex/pyflex_utils/00421.obj"
+    mesh_path = "/home/tlips/Documents/synthetic-cloth-data/pyflex/pyflex_utils/00421_flat.obj"
     cloth_vertices, _ = load_cloth_mesh_in_simulator(
         mesh_path, cloth_bending_stiffness=0.01, cloth_stretch_stiffness=0.5
     )
