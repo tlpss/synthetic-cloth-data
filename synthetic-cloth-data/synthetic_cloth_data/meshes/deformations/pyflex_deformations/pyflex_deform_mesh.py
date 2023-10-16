@@ -35,6 +35,8 @@ class DeformationConfig:
     fold_probability: float = 0.6
     grasp_keypoint_vertex_probability: float = 0.5
     flip_probability: float = 0.4
+    lift_probability: float = 0.0
+    max_lift_height: float = 0.2
 
 
 def deform_mesh(
@@ -141,6 +143,12 @@ def deform_mesh(
 
         # don't fold all the way, as that makes the sim 'force it back to flat' due to the inifite weight of the grasped particle
         grasper.circular_fold_particle(fold_vector, np.pi * 0.9)
+        grasper.release_particle()
+
+    if np.random.uniform() < deformation_config.lift_probability:
+        lift_particle_idx = np.random.randint(0, n_particles)
+        grasper.grasp_particle(lift_particle_idx)
+        grasper.lift_particle(np.random.uniform(0.05, deformation_config.max_lift_height))
         grasper.release_particle()
 
         if np.random.uniform() < deformation_config.flip_probability:

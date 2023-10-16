@@ -154,6 +154,10 @@ class ParticleGrasper:
             self.move_particle(new_position, 0.05)  # as fast as possible while remaining quasi-static
         wait_until_scene_is_stable(pyflex_stepper=self.pyflex_stepper)
 
+    def lift_particle(self, lift_height):
+        self.move_particle(self.get_particle_position() + np.array([0, lift_height, 0]))
+        wait_until_scene_is_stable(pyflex_stepper=self.pyflex_stepper)
+
 
 def create_pyflex_cloth_scene_config(
     dynamic_friction: float = 0.75,
