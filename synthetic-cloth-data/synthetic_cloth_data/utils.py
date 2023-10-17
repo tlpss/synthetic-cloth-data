@@ -2,6 +2,8 @@ import datetime
 import enum
 import subprocess
 
+"""single point of truth for the cloth types and their coco category ids, the keypoint names and their order within each category."""
+
 
 class CLOTH_TYPES(str, enum.Enum):
     LEGO = "LEGO"  # LEGO battery object for testing
@@ -47,6 +49,15 @@ TSHIRT_KEYPOINTS = [
     "sleeve_left_bottom",
     "sleeve_left_top",
 ]
+
+LEGO_KEYPOINTS = ["knob", "top-right", "top-left", "center-front", "center-back"]
+
+CATEGORY_NAME_TO_KEYPOINTS_DICT = {
+    CLOTH_TYPES.LEGO.name: LEGO_KEYPOINTS,
+    CLOTH_TYPES.TOWEL.name: TOWEL_KEYPOINTS,
+    CLOTH_TYPES.SHORTS.name: SHORT_KEYPOINTS,
+    CLOTH_TYPES.TSHIRT.name: TSHIRT_KEYPOINTS,
+}
 
 
 def get_git_revision_hash() -> str:

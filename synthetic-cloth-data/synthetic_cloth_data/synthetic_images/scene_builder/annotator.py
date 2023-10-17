@@ -12,7 +12,11 @@ from bpy_extras.object_utils import world_to_camera_view
 from synthetic_cloth_data.synthetic_images.scene_builder.utils.visible_vertices import (
     is_vertex_occluded_for_scene_camera,
 )
-from synthetic_cloth_data.utils import CLOTH_TYPE_TO_COCO_CATEGORY_ID, TSHIRT_KEYPOINTS
+from synthetic_cloth_data.utils import (
+    CATEGORY_NAME_TO_KEYPOINTS_DICT,
+    CLOTH_TYPE_TO_COCO_CATEGORY_ID,
+    TSHIRT_KEYPOINTS,
+)
 
 
 def create_coco_annotations(
@@ -45,8 +49,11 @@ def create_coco_annotations(
         # so no annotation needs to be added.
         return
 
+    # get the 3D coordinates of the keypoints, in the desired order for the coco category
+    category_keypoints = CATEGORY_NAME_TO_KEYPOINTS_DICT[cloth_type.name]
     keypoints_3D = [
-        cloth_object.matrix_world @ cloth_object.data.vertices[vid].co for vid in keypoint_vertex_dict.values()
+        cloth_object.matrix_world @ cloth_object.data.vertices[keypoint_vertex_dict[keypoint_name]].co
+        for keypoint_name in category_keypoints
     ]
     scene = bpy.context.scene
     camera = bpy.context.scene.camera
@@ -77,7 +84,7 @@ def create_coco_annotations(
     # gather the keypoints
     coco_keypoints = []
     num_labeled_keypoints = 0
-    for keypoint_3D, keypoint_2D in zip(keypoints_3D, keypoints_2D):
+    for keypoint_idx, (keypoint_3D, keypoint_2D) in enumerate(zip(keypoints_3D, keypoints_2D)):
         u, v = keypoint_2D
         px, py = u, v
 
@@ -98,6 +105,7 @@ def create_coco_annotations(
         # for debugging:
         # add 3D sphere around each keypoint
         # bpy.ops.mesh.primitive_uv_sphere_add(radius=0.01, location=keypoint_3D)
+        # bpy.context.object.name = f"keypoint_{TSHIRT_KEYPOINTS[keypoint_idx]}"
 
     # add the solidifier back if required
     if solidify_modifier is not None:
@@ -188,10 +196,6 @@ def _order_tshirt_keypoints(keypoints_2D: np.ndarray, keypoints_3D: np.ndarray, 
         for idx, keypoint in enumerate(TSHIRT_KEYPOINTS):
             if "left" in keypoint:
                 right_idx = TSHIRT_KEYPOINTS.index(keypoint.replace("left", "right"))
-                print(idx)
-                print(right_idx)
-                print(TSHIRT_KEYPOINTS[idx])
-                print(TSHIRT_KEYPOINTS[right_idx])
                 keypoints_2D[idx], keypoints_2D[right_idx] = keypoints_2D[right_idx], keypoints_2D[idx]
                 keypoints_3D[idx], keypoints_3D[right_idx] = keypoints_3D[right_idx], keypoints_3D[idx]
 
