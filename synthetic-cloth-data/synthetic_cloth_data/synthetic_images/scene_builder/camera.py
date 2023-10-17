@@ -21,7 +21,7 @@ class SphericalCameraConfig(CameraConfig):
     """camera position is randomized on a sphere around the origin with specified radius but with minimal z coordinate."""
 
     # extrinsics
-    minimal_camera_height: float = 0.2
+    minimal_camera_height: float = 0.5
     max_sphere_radius: float = 1.2
 
 
