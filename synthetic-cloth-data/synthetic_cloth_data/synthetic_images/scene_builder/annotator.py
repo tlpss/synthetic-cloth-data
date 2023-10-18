@@ -104,8 +104,8 @@ def create_coco_annotations(
 
         # for debugging:
         # add 3D sphere around each keypoint
-        # bpy.ops.mesh.primitive_uv_sphere_add(radius=0.01, location=keypoint_3D)
-        # bpy.context.object.name = f"keypoint_{TSHIRT_KEYPOINTS[keypoint_idx]}"
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.01, location=keypoint_3D)
+        bpy.context.object.name = f"keypoint_{TSHIRT_KEYPOINTS[keypoint_idx]}"
 
     # add the solidifier back if required
     if solidify_modifier is not None:
@@ -176,27 +176,28 @@ def _order_tshirt_keypoints(keypoints_2D: np.ndarray, keypoints_3D: np.ndarray, 
     # the tshirt is symmetric in the image.
 
     # get the two shoulder keypoints
-    # determine which one is closer to the top left corner of the bbox
-    # if left is closest, stop. If right is closests: flip all left and right keypoints, to make that one the left one.
+    # determine which one has smallest U coordinate, this becomes the 'left' shoulder now.
+    # does not necessarily match human intuition, but it is consistent and easy to figure out for the NN.
+    # all other left-right separations can be done afterwards, main thing here is to have association between adjacent keypoints.
 
     shoulder_left_idx = TSHIRT_KEYPOINTS.index("shoulder_left")
     shoulder_right_idx = TSHIRT_KEYPOINTS.index("shoulder_right")
 
     shoulder_left_2D = keypoints_2D[shoulder_left_idx]
     shoulder_right_2D = keypoints_2D[shoulder_right_idx]
-    top_left_bbox = (bbox[0], bbox[1])
-    distances = [
-        np.linalg.norm(np.array(keypoint_2D) - np.array(top_left_bbox))
-        for keypoint_2D in [shoulder_left_2D, shoulder_right_2D]
-    ]
-    minimal_distance_idx = np.argmin(distances)
-    should_tshirt_be_flipped = minimal_distance_idx == 1
+
+    if shoulder_left_2D[0] < shoulder_right_2D[0]:
+        should_tshirt_be_flipped = False
+    else:
+        should_tshirt_be_flipped = True
 
     if should_tshirt_be_flipped:
         for idx, keypoint in enumerate(TSHIRT_KEYPOINTS):
             if "left" in keypoint:
                 right_idx = TSHIRT_KEYPOINTS.index(keypoint.replace("left", "right"))
-                keypoints_2D[idx], keypoints_2D[right_idx] = keypoints_2D[right_idx], keypoints_2D[idx]
+                # swap the rows in the numpy array, cannot do this as with lists
+                # https://stackoverflow.com/questions/21288044/row-exchange-in-numpy
+                keypoints_2D[[idx, right_idx]] = keypoints_2D[[right_idx, idx]]
                 keypoints_3D[idx], keypoints_3D[right_idx] = keypoints_3D[right_idx], keypoints_3D[idx]
 
     return keypoints_2D, keypoints_3D
