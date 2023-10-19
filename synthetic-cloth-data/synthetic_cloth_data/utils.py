@@ -2,7 +2,7 @@ import datetime
 import enum
 import subprocess
 
-"""single point of truth for the cloth types and their coco category ids, the keypoint names and their order within each category."""
+"""single point of truth for the cloth types and their coco category ids, the keypoint names and their order within each category. Should match the aRTFClothes dataset"""
 
 
 class CLOTH_TYPES(str, enum.Enum):
@@ -26,13 +26,13 @@ TOWEL_KEYPOINTS = [
 ]
 
 SHORT_KEYPOINTS = [
-    "left_waist",
-    "right_waist",
-    "right_pipe_outer",
-    "right_pipe_inner",
+    "waist_left",
+    "waist_right",
+    "pipe_right_outer",
+    "pipe_right_inner",
     "crotch",
-    "left_pipe_inner",
-    "left_pipe_outer",
+    "pipe_left_inner",
+    "pipe_left_outer",
 ]
 
 TSHIRT_KEYPOINTS = [

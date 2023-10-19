@@ -13,6 +13,7 @@ from synthetic_cloth_data import DATA_DIR
 from synthetic_cloth_data.utils import SHORT_KEYPOINTS, TOWEL_KEYPOINTS, TSHIRT_KEYPOINTS
 from tqdm import tqdm
 
+### SHOULD MATCH THE aRTFClothes DATASET & utils.py ###
 towel_category = CocoKeypointCategory(
     supercategory="cloth",
     id=0,
