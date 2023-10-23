@@ -171,30 +171,69 @@ def _order_towel_keypoints(keypoints_2D, keypoints_3D, bbox):
 
 def _order_tshirt_keypoints(keypoints_2D: np.ndarray, keypoints_3D: np.ndarray, bbox: tuple):
 
-    # 'left == the side of which the should keypoint is closest to the top left corner of the bbox'
-    # to resolve 'apparent' symmetry in the tshirt meshes, because tshirts are not symmetric in the real world, but if the neck is invisible
-    # the tshirt is symmetric in the image.
-
-    # get the two shoulder keypoints
-    # determine which one has smallest U coordinate, this becomes the 'left' shoulder now.
-    # does not necessarily match human intuition, but it is consistent and easy to figure out for the NN.
-    # all other left-right separations can be done afterwards, main thing here is to have association between adjacent keypoints.
+    # draw vector from waist center to neck center. check if 'left shoulder' is on the left or right side of this vector using the cross product.
+    # If on the right side, swap keypoints.
 
     shoulder_left_idx = TSHIRT_KEYPOINTS.index("shoulder_left")
     shoulder_right_idx = TSHIRT_KEYPOINTS.index("shoulder_right")
 
+    neck_left_idx = TSHIRT_KEYPOINTS.index("neck_left")
+    neck_right_idx = TSHIRT_KEYPOINTS.index("neck_right")
+
+    waist_left_idx = TSHIRT_KEYPOINTS.index("waist_left")
+    waist_right_idx = TSHIRT_KEYPOINTS.index("waist_right")
+
     shoulder_left_2D = keypoints_2D[shoulder_left_idx]
     shoulder_right_2D = keypoints_2D[shoulder_right_idx]
 
-    if shoulder_left_2D[0] < shoulder_right_2D[0]:
-        should_tshirt_be_flipped = False
-    else:
-        should_tshirt_be_flipped = True
+    neck_left_2D = keypoints_2D[neck_left_idx]
+    neck_right_2D = keypoints_2D[neck_right_idx]
 
+    waist_left_2D = keypoints_2D[waist_left_idx]
+    waist_right_2D = keypoints_2D[waist_right_idx]
+
+    waist_center = (waist_left_2D + waist_right_2D) / 2
+    neck_center = (neck_left_2D + neck_right_2D) / 2
+
+    vertical_vector = neck_center - waist_center
+    vertical_vector /= np.linalg.norm(vertical_vector)
+
+    waist_to_left_shoulder_vector = shoulder_left_2D - waist_center
+    waist_to_left_shoulder_vector /= np.linalg.norm(waist_to_left_shoulder_vector)
+
+    waist_to_right_shoulder_vector = shoulder_right_2D - waist_center
+    waist_to_right_shoulder_vector /= np.linalg.norm(waist_to_right_shoulder_vector)
+
+    shoulder_left_projected_onto_vertical_vector = (
+        np.dot(waist_to_left_shoulder_vector, vertical_vector) / np.linalg.norm(vertical_vector) * vertical_vector
+    )
+    shoulder_right_projected_onto_vertical_vector = (
+        np.dot(waist_to_right_shoulder_vector, vertical_vector) / np.linalg.norm(vertical_vector) * vertical_vector
+    )
+
+    shoulder_left_projected_to_shoulder_left = shoulder_left_2D - shoulder_left_projected_onto_vertical_vector
+    shoulder_right_projected_to_shoulder_right = shoulder_right_2D - shoulder_right_projected_onto_vertical_vector
+
+    signed_distance_left_shoulder = np.cross(vertical_vector, shoulder_left_projected_to_shoulder_left)
+    signed_distance_right_shoulder = np.cross(vertical_vector, shoulder_right_projected_to_shoulder_right)
+    bpy.ops.mesh.primitive_cube_add(size=0.1, location=keypoints_3D[shoulder_left_idx])
+    bpy.context.active_object.name = "left_shoulder"
+
+    print(signed_distance_right_shoulder)
+    print(signed_distance_left_shoulder)
+
+    # origin  is topleft of image
+    # so positive z coord points down and implies the 'left kp' was actually on the right side of the body
+    if signed_distance_left_shoulder > signed_distance_right_shoulder:
+        should_tshirt_be_flipped = True
+    else:
+        should_tshirt_be_flipped = False
+    print(f"should_tshirt_be_flipped: {should_tshirt_be_flipped}")
     if should_tshirt_be_flipped:
         for idx, keypoint in enumerate(TSHIRT_KEYPOINTS):
             if "left" in keypoint:
                 right_idx = TSHIRT_KEYPOINTS.index(keypoint.replace("left", "right"))
+                print(f"swapping {keypoint} with {TSHIRT_KEYPOINTS[right_idx]}")
                 # swap the rows in the numpy array, cannot do this as with lists
                 # https://stackoverflow.com/questions/21288044/row-exchange-in-numpy
                 keypoints_2D[[idx, right_idx]] = keypoints_2D[[right_idx, idx]]
