@@ -317,7 +317,7 @@ def add_fabric_material_to_bsdf(material: bpy.types.Material, config: FabricMate
 
     # This only modifies the normals.
     # The displacements are not used, because they are more expensive whilst the added realism won't even show at 512x512.
-    # Additionally,  I don't need the 'physical displacements' so I can just use the normals?
+    # Additionally, I don't need the 'physical displacements' so I can just use the normals anyways.
 
     # add low-freq noise to create some additional wrinkles etc
     material = _add_noise_texture_to_bsdf_normals(
