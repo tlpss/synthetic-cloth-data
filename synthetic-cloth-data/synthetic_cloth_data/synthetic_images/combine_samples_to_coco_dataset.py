@@ -10,7 +10,7 @@ from airo_dataset_tools.data_parsers.coco import (
     CocoKeypointsDataset,
 )
 from synthetic_cloth_data import DATA_DIR
-from synthetic_cloth_data.utils import SHORT_KEYPOINTS, TOWEL_KEYPOINTS, TSHIRT_KEYPOINTS
+from synthetic_cloth_data.utils import SHORTS_KEYPOINTS, TOWEL_KEYPOINTS, TSHIRT_KEYPOINTS
 from tqdm import tqdm
 
 ### SHOULD MATCH THE aRTFClothes DATASET & utils.py ###
@@ -31,7 +31,7 @@ short_category = CocoKeypointCategory(
     supercategory="cloth",
     id=1,
     name="short",
-    keypoints=SHORT_KEYPOINTS,
+    keypoints=SHORTS_KEYPOINTS,
 )
 
 lego_category = CocoKeypointCategory(

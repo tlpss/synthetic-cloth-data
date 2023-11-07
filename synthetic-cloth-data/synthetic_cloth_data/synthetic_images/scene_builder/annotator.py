@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from typing import List, Tuple
 
 import bpy
 import cv2
@@ -15,6 +16,7 @@ from synthetic_cloth_data.synthetic_images.scene_builder.utils.visible_vertices 
 from synthetic_cloth_data.utils import (
     CATEGORY_NAME_TO_KEYPOINTS_DICT,
     CLOTH_TYPE_TO_COCO_CATEGORY_ID,
+    SHORTS_KEYPOINTS,
     TSHIRT_KEYPOINTS,
 )
 
@@ -169,7 +171,7 @@ def _order_towel_keypoints(keypoints_2D, keypoints_3D, bbox):
     return keypoints_2D, keypoints_3D
 
 
-def _order_tshirt_keypoints(keypoints_2D: np.ndarray, keypoints_3D: np.ndarray, bbox: tuple):
+def _order_tshirt_keypoints(keypoints_2D: np.ndarray, keypoints_3D: List, bbox: tuple):
 
     # left == side of which the waist kp is closest to the bottom left corner of the bbox in 2D.
     # simply serves to break symmetries and find adjacent keypoints, does not correspond with human notion of left and right,
@@ -192,15 +194,44 @@ def _order_tshirt_keypoints(keypoints_2D: np.ndarray, keypoints_3D: np.ndarray, 
         should_tshirt_be_flipped = True
     else:
         should_tshirt_be_flipped = False
-    print(f"should_tshirt_be_flipped: {should_tshirt_be_flipped}")
+    # print(f"should_tshirt_be_flipped: {should_tshirt_be_flipped}")
     if should_tshirt_be_flipped:
         for idx, keypoint in enumerate(TSHIRT_KEYPOINTS):
             if "left" in keypoint:
                 right_idx = TSHIRT_KEYPOINTS.index(keypoint.replace("left", "right"))
-                print(f"swapping {keypoint} with {TSHIRT_KEYPOINTS[right_idx]}")
+                # print(f"swapping {keypoint} with {TSHIRT_KEYPOINTS[right_idx]}")
                 # swap the rows in the numpy array, cannot do this as with lists
                 # https://stackoverflow.com/questions/21288044/row-exchange-in-numpy
                 keypoints_2D[[idx, right_idx]] = keypoints_2D[[right_idx, idx]]
                 keypoints_3D[idx], keypoints_3D[right_idx] = keypoints_3D[right_idx], keypoints_3D[idx]
 
     return keypoints_2D, keypoints_3D
+
+
+def order_shorts_keypoints(keypoints_2D: np.ndarray, keypoints_3D: List, bbox: Tuple[int]) -> np.ndarray:
+    x_min, y_min, width, height = bbox
+
+    top_left_bbox_corner = (x_min, y_min)
+
+    waist_left_idx = SHORTS_KEYPOINTS.index("waist_left")
+    waist_right_idx = SHORTS_KEYPOINTS.index("waist_right")
+    waist_left_2D = keypoints_2D[waist_left_idx][:2]
+    waist_right_2D = keypoints_2D[waist_right_idx][:2]
+
+    distance_waist_left = np.linalg.norm(np.array(waist_left_2D) - np.array(top_left_bbox_corner))
+    distance_waist_right = np.linalg.norm(np.array(waist_right_2D) - np.array(top_left_bbox_corner))
+
+    if distance_waist_left > distance_waist_right:
+        should_shorts_be_flipped = True
+    else:
+        should_shorts_be_flipped = False
+
+    if should_shorts_be_flipped:
+        for idx, keypoint in enumerate(SHORTS_KEYPOINTS):
+            if "left" in keypoint:
+                right_idx = SHORTS_KEYPOINTS.index(keypoint.replace("left", "right"))
+                # swap the rows in the numpy array, cannot do this as with lists
+                # https://stackoverflow.com/questions/21288044/row-exchange-in-numpy
+                keypoints_2D[[idx, right_idx]] = keypoints_2D[[right_idx, idx]]
+                keypoints_3D[idx], keypoints_3D[right_idx] = keypoints_3D[right_idx], keypoints_3D[idx]
+    return keypoints_2D

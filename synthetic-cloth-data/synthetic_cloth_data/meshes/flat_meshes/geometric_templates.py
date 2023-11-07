@@ -2,7 +2,7 @@ import dataclasses
 from typing import List
 
 import numpy as np
-from synthetic_cloth_data.utils import SHORT_KEYPOINTS, TOWEL_KEYPOINTS, TSHIRT_KEYPOINTS
+from synthetic_cloth_data.utils import SHORTS_KEYPOINTS, TOWEL_KEYPOINTS, TSHIRT_KEYPOINTS
 
 
 @dataclasses.dataclass
@@ -76,7 +76,7 @@ def create_short_vertices(config: ShortsMeshConfig) -> List[np.ndarray]:
     vertices[:, 1] += config.crotch_height
     vertices = list(vertices)
 
-    keypoints = {name: vertex for name, vertex in zip(SHORT_KEYPOINTS, vertices)}
+    keypoints = {name: vertex for name, vertex in zip(SHORTS_KEYPOINTS, vertices)}
     return vertices, keypoints
 
 

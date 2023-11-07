@@ -25,7 +25,7 @@ TOWEL_KEYPOINTS = [
     "corner3",
 ]
 
-SHORT_KEYPOINTS = [
+SHORTS_KEYPOINTS = [
     "waist_left",
     "waist_right",
     "pipe_right_outer",
@@ -55,7 +55,7 @@ LEGO_KEYPOINTS = ["knob", "top-right", "top-left", "center-front", "center-back"
 CATEGORY_NAME_TO_KEYPOINTS_DICT = {
     CLOTH_TYPES.LEGO.name: LEGO_KEYPOINTS,
     CLOTH_TYPES.TOWEL.name: TOWEL_KEYPOINTS,
-    CLOTH_TYPES.SHORTS.name: SHORT_KEYPOINTS,
+    CLOTH_TYPES.SHORTS.name: SHORTS_KEYPOINTS,
     CLOTH_TYPES.TSHIRT.name: TSHIRT_KEYPOINTS,
 }
 
