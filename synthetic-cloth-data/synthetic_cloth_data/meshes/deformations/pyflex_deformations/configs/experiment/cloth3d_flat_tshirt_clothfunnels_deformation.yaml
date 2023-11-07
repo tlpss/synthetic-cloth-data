@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+- override /deformation: clothfunnels
+
+deformation:
+  max_drag: 0
+
+mesh_dir: flat_meshes/TSHIRT/Cloth3D-1-flat
+output_dir: deformed_meshes/TSHIRT/03-cloth3d-flat-clothfunnels
+
+num_samples: 100
+start_id: 0
+debug: True

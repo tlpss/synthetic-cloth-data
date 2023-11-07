@@ -1,5 +1,5 @@
 # @package _global_
-deformation_config:
+deformation:
   max_drag: 0.0 # not necessary with all the self collisions
   max_orientation_angle: 1.0 # np.pi /3, keep deformations small
   fold_probability: 0.8

@@ -1,0 +1,3 @@
+_target_: __main__.ARTFDeformationConfig #cannot use the full class path because the class is defined in the __main__ module? TODO: figure out
+fold_probability: 1.0
+grasp_keypoint_vertex_probability: 0.8
