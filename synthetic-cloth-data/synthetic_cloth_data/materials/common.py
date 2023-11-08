@@ -39,7 +39,6 @@ def add_image_to_material_base_color(
         .links[0]
         .from_socket.identifier  # use identifier, names are not unique!
     )
-
     # create nodes
     image_node = material.node_tree.nodes.new("ShaderNodeTexImage")
     # load the image and attach to the blender node
@@ -84,7 +83,10 @@ def add_image_to_material_base_color(
     material.node_tree.links.new(compare_y_node.outputs["Value"], multiply_node.inputs[1])
     material.node_tree.links.new(multiply_node.outputs["Value"], mix_node.inputs["Fac"])
     material.node_tree.links.new(image_node.outputs["Color"], mix_node.inputs["Color2"])
-    material.node_tree.links.new(color_input_node.outputs[color_input_node_socket], mix_node.inputs["Color1"])
+    for i in range(len(color_input_node.outputs)):
+        if color_input_node.outputs[i].identifier == color_input_node_socket:
+            material.node_tree.links.new(mix_node.inputs["Color1"], color_input_node.outputs[i])
+            print("found socket")
 
     material.node_tree.links.new(
         mix_node.outputs["Color"], material.node_tree.nodes["Principled BSDF"].inputs["Base Color"]

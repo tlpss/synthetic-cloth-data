@@ -2,7 +2,7 @@ defaults:
   - camera: zed2i_512_256
   - renderer: cycles
   - cloth_mesh: default
-  - cloth_material: hsv
+  - cloth_material: tshirt
   - surface: polyhaven
   - distractors: default
   - _self_

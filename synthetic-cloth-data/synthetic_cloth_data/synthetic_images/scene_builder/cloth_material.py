@@ -1,4 +1,5 @@
 import dataclasses
+from pathlib import Path
 from typing import List
 
 import airo_blender as ab
@@ -6,7 +7,9 @@ import bpy
 import numpy as np
 from synthetic_cloth_data.materials.common import (
     FabricMaterialConfig,
+    ImageOnTextureConfig,
     add_fabric_material_to_bsdf,
+    add_image_to_material_base_color,
     create_evenly_colored_material,
 )
 from synthetic_cloth_data.materials.towels import (
@@ -14,7 +17,10 @@ from synthetic_cloth_data.materials.towels import (
     create_striped_material,
     modify_bsdf_to_cloth,
 )
-from synthetic_cloth_data.synthetic_images.assets.asset_snapshot_paths import POLYHAVEN_ASSETS_SNAPSHOT_RELATIVE_PATH
+from synthetic_cloth_data.synthetic_images.assets.asset_snapshot_paths import (
+    ASSETS_CODE_PATH,
+    POLYHAVEN_ASSETS_SNAPSHOT_RELATIVE_PATH,
+)
 from synthetic_cloth_data.synthetic_images.scene_builder.utils.assets import AssetConfig
 from synthetic_cloth_data.synthetic_images.scene_builder.utils.colors import hsv_to_rgb, sample_hsv_color
 from synthetic_cloth_data.utils import CLOTH_TYPES
@@ -49,6 +55,13 @@ class LegoBatteryMaterialConfig(ClothMaterialConfig):
 
 
 @dataclasses.dataclass
+class TshirtMaterialConfig(ClothMaterialConfig):
+    uniform_color_probability: float = 0.8  # probability of a uniform color material
+    image_probability: float = 0.1  # probability of a logo image added on top of the material
+    image_path: float = ASSETS_CODE_PATH / "coco_images"
+
+
+@dataclasses.dataclass
 class PolyhavenMaterials(AssetConfig):
     asset_json_relative_path: str = POLYHAVEN_ASSETS_SNAPSHOT_RELATIVE_PATH
     types: List[str] = dataclasses.field(default_factory=lambda: ["materials"])
@@ -62,6 +75,9 @@ class PolyhavenMaterialConfig(ClothMaterialConfig):
 def add_material_to_cloth_mesh(config: ClothMaterialConfig, cloth_object: bpy.types.Object, cloth_type: CLOTH_TYPES):
     if isinstance(config, TowelMaterialConfig):
         _add_towel_material_to_mesh(config, cloth_object)
+
+    elif isinstance(config, TshirtMaterialConfig):
+        _add_tshirt_material_to_mesh(config, cloth_object)
     elif isinstance(config, HSVMaterialConfig):
         _add_rgb_material_to_mesh(config, cloth_object)
 
@@ -125,8 +141,56 @@ def _add_towel_material_to_mesh(config: TowelMaterialConfig, cloth_object: bpy.t
             horizontal_color,
             intersection_color,
         )
+
     material = modify_bsdf_to_cloth(material)
     material = _add_procedural_fabric_texture_to_bsdf(material)
+    cloth_object.data.materials[0] = material
+
+
+def _add_tshirt_material_to_mesh(config: TshirtMaterialConfig, cloth_object: bpy.types.Object):
+    if np.random.rand() < config.uniform_color_probability:
+        hsv = sample_hsv_color()
+        rgb = hsv_to_rgb(hsv)
+        rgba = np.concatenate([rgb, [1]])
+        material = create_evenly_colored_material(rgba)
+    else:
+        # create striped material
+        amount_of_stripes = np.random.randint(2, 20)
+        relative_stripe_width = np.random.uniform(0.1, 0.5)
+        stripe_color = hsv_to_rgb(sample_hsv_color())
+        background_color = hsv_to_rgb(sample_hsv_color())
+        vertical_orientation = np.random.rand() < 0.5
+        stripe_color = np.array([*stripe_color, 1])
+        background_color = np.array([*background_color, 1])
+        material = create_striped_material(
+            amount_of_stripes, relative_stripe_width, stripe_color, background_color, vertical_orientation
+        )
+    if np.random.rand() < config.image_probability:
+        # add image on top of material
+        x_width = np.random.uniform(0.02, 0.2)
+        y_width = np.random.uniform(0.01, 0.1)
+        x_center = np.random.uniform(0.0, 1.0)
+        y_center = np.random.uniform(0.0, 0.5)  # uv maps only on bottom half of the (0,0) to (1,1) square
+        image_scale = np.random.uniform(2.0, 20.0)
+        image_config = ImageOnTextureConfig(
+            uv_x_position=x_center,
+            uv_y_position=y_center,
+            uv_x_width=x_width,
+            uv_y_width=y_width,
+            image_x_scale=image_scale,
+            image_y_scale=image_scale,
+        )
+        image_dir = config.image_path
+        image_dir = Path(image_dir)
+        images = list(image_dir.glob("*.jpg"))
+        images.extend(list(image_dir.glob("*.png")))
+        print(images)
+        image_path = np.random.choice(images)
+        add_image_to_material_base_color(material, str(image_path), image_config)
+
+    material = modify_bsdf_to_cloth(material)
+    material = _add_procedural_fabric_texture_to_bsdf(material)
+    cloth_object.data.materials[0] = material
 
 
 def _add_rgb_material_to_mesh(config: HSVMaterialConfig, cloth_object: bpy.types.Object):
