@@ -7,7 +7,7 @@ deformation:
 
 
 
-mesh_dir: flat_meshes/TSHIRT/Cloth3D-1-flat
+mesh_dir: flat_meshes/TSHIRT/Cloth3D-5-flat-randomized-scale
 output_dir: deformed_meshes/TSHIRT/02-cloth3d-flat
 
 num_samples: 100
