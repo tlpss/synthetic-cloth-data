@@ -346,7 +346,7 @@ if __name__ == "__main__":
     pyflex.set_camera_params(config["camera_params"][config["camera_name"]])
 
     # mesh_path = "/home/tlips/Documents/synthetic-cloth-data/pyflex/pyflex_utils/00421.obj"
-    mesh_path = "/home/tlips/Documents/synthetic-cloth-data/pyflex/pyflex_utils/00421_flat.obj"
+    mesh_path = "/home/tlips/Documents/synthetic-cloth-data/synthetic-cloth-data/data/flat_meshes/SHORTS/Cloth3D-5-flat/01375.obj"
     cloth_vertices, _ = load_cloth_mesh_in_simulator(
         mesh_path, cloth_bending_stiffness=0.01, cloth_stretch_stiffness=0.5
     )
@@ -358,7 +358,7 @@ if __name__ == "__main__":
     # pyflex.set_gravity(0, 0, 0)
 
     # drop cloth to the ground
-    wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper, max_steps=100)
+    wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper, max_steps=400)
 
     # grasp_particle_idx = np.random.randint(0, n_particles)
     # grasper = ParticleGrasper(pyflex_stepper)
