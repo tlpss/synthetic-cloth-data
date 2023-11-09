@@ -62,6 +62,11 @@ class TshirtMaterialConfig(ClothMaterialConfig):
 
 
 @dataclasses.dataclass
+class ShortsMaterialConfig(ClothMaterialConfig):
+    uniform_color_probability: float = 0.8  # probability of a uniform color material
+
+
+@dataclasses.dataclass
 class PolyhavenMaterials(AssetConfig):
     asset_json_relative_path: str = POLYHAVEN_ASSETS_SNAPSHOT_RELATIVE_PATH
     types: List[str] = dataclasses.field(default_factory=lambda: ["materials"])
@@ -78,6 +83,9 @@ def add_material_to_cloth_mesh(config: ClothMaterialConfig, cloth_object: bpy.ty
 
     elif isinstance(config, TshirtMaterialConfig):
         _add_tshirt_material_to_mesh(config, cloth_object)
+
+    elif isinstance(config, ShortsMaterialConfig):
+        _add_shorts_material_to_mesh(config, cloth_object)
     elif isinstance(config, HSVMaterialConfig):
         _add_rgb_material_to_mesh(config, cloth_object)
 
@@ -187,6 +195,30 @@ def _add_tshirt_material_to_mesh(config: TshirtMaterialConfig, cloth_object: bpy
         print(images)
         image_path = np.random.choice(images)
         add_image_to_material_base_color(material, str(image_path), image_config)
+
+    material = modify_bsdf_to_cloth(material)
+    material = _add_procedural_fabric_texture_to_bsdf(material)
+    cloth_object.data.materials[0] = material
+
+
+def _add_shorts_material_to_mesh(config: ShortsMaterialConfig, cloth_object: bpy.types.Object):
+    if np.random.rand() < config.uniform_color_probability:
+        hsv = sample_hsv_color()
+        rgb = hsv_to_rgb(hsv)
+        rgba = np.concatenate([rgb, [1]])
+        material = create_evenly_colored_material(rgba)
+    else:
+        # create striped material
+        amount_of_stripes = np.random.randint(2, 20)
+        relative_stripe_width = np.random.uniform(0.1, 0.5)
+        stripe_color = hsv_to_rgb(sample_hsv_color())
+        background_color = hsv_to_rgb(sample_hsv_color())
+        vertical_orientation = np.random.rand() < 0.5
+        stripe_color = np.array([*stripe_color, 1])
+        background_color = np.array([*background_color, 1])
+        material = create_striped_material(
+            amount_of_stripes, relative_stripe_width, stripe_color, background_color, vertical_orientation
+        )
 
     material = modify_bsdf_to_cloth(material)
     material = _add_procedural_fabric_texture_to_bsdf(material)

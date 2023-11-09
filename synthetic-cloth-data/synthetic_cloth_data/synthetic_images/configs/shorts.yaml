@@ -1,0 +1,16 @@
+defaults:
+  - camera: zed2i_512_256
+  - renderer: cycles
+  - cloth_mesh: default
+  - cloth_material: shorts
+  - surface: polyhaven
+  - distractors: default
+  - _self_
+
+
+cloth_type: SHORTS
+id: 2
+relative_dataset_path: synthetic_images/SHORTS/00
+
+cloth_mesh:
+  mesh_path: deformed_meshes/SHORTS/00-cloth3d
