@@ -2,7 +2,7 @@
 mesh_dir: flat_meshes/TOWEL/dev
 output_dir: deformed_meshes/TOWEL/pyflex/dev
 
-deformation_config:
+deformation:
   fold_probability: 0.95
   grasp_keypoint_vertex_probability: 0.9
 

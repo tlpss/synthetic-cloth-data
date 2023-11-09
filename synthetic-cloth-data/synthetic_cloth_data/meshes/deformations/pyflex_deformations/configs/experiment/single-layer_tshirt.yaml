@@ -1,11 +1,11 @@
 # @package _global_
-deformation_config:
+deformation:
   #max_drag: 0.0 # not necessary with all the self collisions
   max_orientation_angle: 0.5 # np.pi /6, keep deformations small
   fold_probability: 0.7
 
 mesh_dir: flat_meshes/TSHIRT/dev
-output_dir: deformed_meshes/TSHIRT/pyflex/single-layer
+output_dir: deformed_meshes/TSHIRT/04-single-layer
 
 num_samples: 100
 start_id: 0
