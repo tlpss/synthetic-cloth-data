@@ -137,14 +137,14 @@ def sample_towel_bevel_configs(keypoint_ids: List[int]):
 def sample_shorts_bevel_configs(keypoint_ids: List[int]):
     bevel_configs = []
     for id in keypoint_ids:
-        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.015)))
+        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.005)))
     return bevel_configs
 
 
 def sample_tshirt_bevel_configs(keypoint_ids: List[int]):
     bevel_configs = []
     for id in keypoint_ids:
-        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.015)))
+        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.005)))
     return bevel_configs
 
 
