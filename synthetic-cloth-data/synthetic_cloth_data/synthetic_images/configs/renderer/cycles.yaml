@@ -1,5 +1,5 @@
 _target_: synthetic_cloth_data.synthetic_images.scene_builder.renderer.CyclesRendererConfig
-num_samples: 64
+num_samples: 128
 denoise: True
 exposure_min: -1.0
 exposure_max: 1.0
