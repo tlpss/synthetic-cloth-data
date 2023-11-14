@@ -10,6 +10,7 @@ import numpy as np
 from airo_dataset_tools.data_parsers.coco import CocoImage, CocoKeypointAnnotation
 from airo_dataset_tools.segmentation_mask_converter import BinarySegmentationMask
 from bpy_extras.object_utils import world_to_camera_view
+from synthetic_cloth_data.meshes.utils.n_ring_neighbours import build_neighbour_dict, get_strict_n_ring_neighbours
 from synthetic_cloth_data.synthetic_images.scene_builder.utils.visible_vertices import (
     is_vertex_occluded_for_scene_camera,
 )
@@ -21,8 +22,13 @@ from synthetic_cloth_data.utils import (
 )
 
 
-def create_coco_annotations(
-    cloth_type, output_dir: str, coco_id: int, cloth_object: bpy.types.Object, keypoint_vertex_dict: dict
+def create_coco_annotations(  # noqa: C901
+    cloth_type,
+    output_dir: str,
+    coco_id: int,
+    cloth_object: bpy.types.Object,
+    keypoint_vertex_dict: dict,
+    annotations_n_ring_visibility: int = 4,
 ):
     image_name = "rgb"
     segmentation_name = "segmentation"
@@ -86,11 +92,28 @@ def create_coco_annotations(
     # gather the keypoints
     coco_keypoints = []
     num_labeled_keypoints = 0
+    neighbours_dict = build_neighbour_dict(cloth_object)
     for keypoint_idx, (keypoint_3D, keypoint_2D) in enumerate(zip(keypoints_3D, keypoints_2D)):
         u, v = keypoint_2D
         px, py = u, v
 
-        visible_flag = 1 if is_vertex_occluded_for_scene_camera(keypoint_3D) else 2
+        # take N-ring neighbourhood of the keypoint and check if any of the vertices in the neighbourhood are not occluded
+        # if so, we set the keypoint to be visible
+        # location remains at the original keypoint location
+        is_kp_visible = False
+        for i in range(annotations_n_ring_visibility + 1):
+            n_ring_neighbours = get_strict_n_ring_neighbours(
+                neighbours_dict, keypoint_vertex_dict[category_keypoints[keypoint_idx]], i
+            )
+            for neighbour in n_ring_neighbours:
+                neighbour_coords = cloth_object.matrix_world @ cloth_object.data.vertices[neighbour].co
+                if not is_vertex_occluded_for_scene_camera(neighbour_coords):
+                    is_kp_visible = True
+                    print(f"found visible neighbour at n={i}")
+                    break
+            if is_kp_visible:
+                break
+        visible_flag = 2 if is_kp_visible else 1
         print(f"{keypoint_3D} -> visible_flag: {visible_flag}")
 
         # we set keypoints outside the image to be "not labeled"
