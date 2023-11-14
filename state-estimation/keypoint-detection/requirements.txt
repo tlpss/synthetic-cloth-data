@@ -1,2 +1,0 @@
-keypoint-detection@git+https://github.com/tlpss/keypoint-detection.git@eff5db7
-

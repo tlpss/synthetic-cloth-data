@@ -1,2 +1,0 @@
-ultralytics==8.0.179
-wandb
