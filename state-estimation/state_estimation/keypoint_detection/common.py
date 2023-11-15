@@ -30,7 +30,7 @@ DEFAULT_DICT = {
 
 SYNTH_DEFAULT_DICT = DEFAULT_DICT.copy()
 SYNTH_DEFAULT_DICT["ap_epoch_freq"] = 3
-SYNTH_DEFAULT_DICT["max_epochs"] = 10
+SYNTH_DEFAULT_DICT["max_epochs"] = 15
 
 
 def create_train_command_from_arg_dict(arg_dict):
