@@ -5,12 +5,13 @@ defaults:
   - cloth_material: tshirt
   - surface: polyhaven
   - distractors: default
+  - annotator: default
   - _self_
 
 
 cloth_type: TSHIRT
 id: 2
-relative_dataset_path: synthetic_images/TSHIRT/00-cloth3d-default-material
+relative_dataset_path: synthetic_images/TSHIRT/dev
 
 cloth_mesh:
   mesh_path: deformed_meshes/TSHIRT/02-cloth3d-flat-5K

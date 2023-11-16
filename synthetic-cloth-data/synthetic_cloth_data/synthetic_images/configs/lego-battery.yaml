@@ -4,6 +4,7 @@ defaults:
   - cloth_mesh: default
   - surface: polyhaven
   - distractors: default
+  - annotator: default
   - _self_
 
 cloth_type: LEGO

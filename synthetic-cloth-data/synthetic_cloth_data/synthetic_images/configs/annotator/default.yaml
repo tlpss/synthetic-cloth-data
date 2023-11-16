@@ -1,0 +1,2 @@
+_target_: synthetic_cloth_data.synthetic_images.scene_builder.annotator.COCOAnnotatorConfig
+annotations_n_ring_visibility: 4

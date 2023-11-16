@@ -5,12 +5,13 @@ defaults:
   - cloth_material: shorts
   - surface: polyhaven
   - distractors: default
+  - annotator: default
   - _self_
 
 
 cloth_type: SHORTS
 id: 2
-relative_dataset_path: synthetic_images/SHORTS/00
+relative_dataset_path: synthetic_images/SHORTS/dev
 
 cloth_mesh:
   mesh_path: deformed_meshes/SHORTS/00-cloth3d

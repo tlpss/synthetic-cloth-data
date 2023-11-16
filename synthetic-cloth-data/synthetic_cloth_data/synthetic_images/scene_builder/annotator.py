@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import json
 import os
 from typing import List, Tuple
@@ -22,13 +23,20 @@ from synthetic_cloth_data.utils import (
 )
 
 
+@dataclasses.dataclass
+class COCOAnnotatorConfig:
+    # N-ring of vertices to check for visibility of keypoints.
+    # If any of the vertices in the n-ring is visible, the keypoint is considered visible.
+    annotations_n_ring_visibility: int = 4
+
+
 def create_coco_annotations(  # noqa: C901
     cloth_type,
     output_dir: str,
     coco_id: int,
     cloth_object: bpy.types.Object,
     keypoint_vertex_dict: dict,
-    annotations_n_ring_visibility: int = 4,
+    annotator_config: COCOAnnotatorConfig,
 ):
     image_name = "rgb"
     segmentation_name = "segmentation"
@@ -101,7 +109,7 @@ def create_coco_annotations(  # noqa: C901
         # if so, we set the keypoint to be visible
         # location remains at the original keypoint location
         is_kp_visible = False
-        for i in range(annotations_n_ring_visibility + 1):
+        for i in range(COCOAnnotatorConfig.annotations_n_ring_visibility + 1):
             n_ring_neighbours = get_strict_n_ring_neighbours(
                 neighbours_dict, keypoint_vertex_dict[category_keypoints[keypoint_idx]], i
             )

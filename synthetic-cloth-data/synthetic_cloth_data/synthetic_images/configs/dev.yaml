@@ -5,6 +5,7 @@ defaults:
   - cloth_material: hsv
   - surface: hsv
   - distractors: default
+  - annotator: default
   - _self_
 
 

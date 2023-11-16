@@ -5,11 +5,15 @@ defaults:
   - cloth_material: towel
   - surface: polyhaven
   - distractors: default
+  - annotator: default
   - _self_
 
 cloth_type: TOWEL
 id: 5
-relative_dataset_path: synthetic_images/TOWEL/06-smaller
+relative_dataset_path: synthetic_images/TOWEL/dev
+
+annotator:
+  annotations_n_ring_visibility: 2
 
 cloth_mesh:
   mesh_path: deformed_meshes/TOWEL/03-smaller

@@ -5,7 +5,7 @@ import dataclasses
 import bpy
 import numpy as np
 from loguru import logger
-from synthetic_cloth_data.synthetic_images.scene_builder.annotator import create_coco_annotations
+from synthetic_cloth_data.synthetic_images.scene_builder.annotator import COCOAnnotatorConfig, create_coco_annotations
 from synthetic_cloth_data.synthetic_images.scene_builder.background import (
     HDRIConfig,
     add_polyhaven_hdri_background_to_scene,
@@ -32,6 +32,7 @@ class ClothSceneConfig:
     surface_config: SurfaceConfig
     distractor_config: DistractorConfig
     renderer_config: RendererConfig
+    annotator_config: COCOAnnotatorConfig
     coco_id: int
     relative_dataset_dir: str
 
@@ -69,7 +70,12 @@ def create_sample(scene_config: ClothSceneConfig):
     render_scene(scene_config.renderer_config, output_dir)
     logger.debug("rendering done")
     create_coco_annotations(
-        scene_config.cloth_type, output_dir, scene_config.coco_id, cloth_object, keypoint_vertex_dict
+        scene_config.cloth_type,
+        output_dir,
+        scene_config.coco_id,
+        cloth_object,
+        keypoint_vertex_dict,
+        scene_config.annotator_config,
     )
 
 
@@ -110,6 +116,7 @@ if __name__ == "__main__":
         renderer_config=hydra.utils.instantiate(cfg["renderer"]),
         coco_id=cfg["id"],
         relative_dataset_dir=DATA_DIR / cfg["relative_dataset_path"],
+        annotator_config=hydra.utils.instantiate(cfg["annotator"]),
     )
     # print(json.dumps(dataclasses.asdict(config), indent=4))
     # print(config)
