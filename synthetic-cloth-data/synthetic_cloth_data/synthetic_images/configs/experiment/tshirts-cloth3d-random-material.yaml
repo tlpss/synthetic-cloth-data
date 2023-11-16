@@ -1,0 +1,12 @@
+# @package _global_
+
+defaults:
+  - override /cloth_material: random_polyhaven
+
+cloth_type: TSHIRT
+relative_dataset_path: synthetic_images/TSHIRT/02-cloth3d-random-material
+
+cloth_mesh:
+  mesh_path: deformed_meshes/TSHIRT/02-cloth3d-flat-5K
+
+

@@ -1,0 +1,15 @@
+# @package _global_
+
+defaults:
+  - override /cloth_material: hsv
+
+cloth_type: TSHIRT
+relative_dataset_path: synthetic_images/TSHIRT/01-cloth3d-hsv-material
+
+cloth_mesh:
+  mesh_path: deformed_meshes/TSHIRT/02-cloth3d-flat-5K
+
+cloth_material:
+  add_procedural_fabric_texture: False
+
+

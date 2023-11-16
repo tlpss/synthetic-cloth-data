@@ -42,6 +42,7 @@ class HSVMaterialConfig(ClothMaterialConfig):
     h_range: List = dataclasses.field(default_factory=lambda: [0, 1])
     s_range: List = dataclasses.field(default_factory=lambda: [0, 1])
     v_range: List = dataclasses.field(default_factory=lambda: [0.5, 1])
+    add_procedural_fabric_texture: bool = True
 
 
 @dataclasses.dataclass
@@ -151,7 +152,8 @@ def _add_towel_material_to_mesh(config: TowelMaterialConfig, cloth_object: bpy.t
         )
 
     material = modify_bsdf_to_cloth(material)
-    material = _add_procedural_fabric_texture_to_bsdf(material)
+    if config.add_procedural_fabric_texture:
+        material = _add_procedural_fabric_texture_to_bsdf(material)
     cloth_object.data.materials[0] = material
 
 
