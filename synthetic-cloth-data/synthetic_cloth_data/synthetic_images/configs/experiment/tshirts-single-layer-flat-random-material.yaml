@@ -1,0 +1,15 @@
+# @package _global_
+
+# @package _global_
+defaults:
+  - override /cloth_material: random_polyhaven
+
+
+cloth_type: TSHIRT
+relative_dataset_path: synthetic_images/TSHIRT/06-single-layer-flat-random-material
+
+cloth_mesh:
+  mesh_path: flat_meshes/TSHIRT/01-single-layer
+
+annotator:
+  annotations_n_ring_visibility: 2
