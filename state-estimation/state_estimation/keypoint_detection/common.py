@@ -28,9 +28,13 @@ DEFAULT_DICT = {
     "wandb_name": None,
 }
 
+# based on hparam sweep
 SYNTH_DEFAULT_DICT = DEFAULT_DICT.copy()
 SYNTH_DEFAULT_DICT["ap_epoch_freq"] = 3
-SYNTH_DEFAULT_DICT["max_epochs"] = 15
+SYNTH_DEFAULT_DICT["max_epochs"] = 20
+SYNTH_DEFAULT_DICT["batch_size"] = 16
+SYNTH_DEFAULT_DICT["heatmap_sigma"] = 1
+SYNTH_DEFAULT_DICT["learning_rate"] = 1e-4
 
 
 def create_train_command_from_arg_dict(arg_dict):
