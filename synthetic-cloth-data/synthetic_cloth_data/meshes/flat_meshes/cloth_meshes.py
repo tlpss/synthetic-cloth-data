@@ -86,19 +86,19 @@ def sample_towel_bezier_config() -> BezierConfig:
     bezier_configs = []
     for i in range(4):  # 4 edges for towels
         end = (i + 1) % 4
-        bezier_configs.append(BezierConfig(i, end, np.random.uniform(-0.0, 0.0), np.random.uniform(-0.0, 0.0)))
+        bezier_configs.append(BezierConfig(i, end, np.random.uniform(-0.01, 0.01), np.random.uniform(-0.01, 0.01)))
     return bezier_configs
 
 
 def sample_shorts_bezier_config() -> BezierConfig:
     bezier_configs = [
-        BezierConfig(0, 1, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.03, 0.03)),  # waist
-        BezierConfig(1, 2, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.03, 0.03)),  # right pipe outer
-        BezierConfig(2, 3, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.03, 0.03)),  # right pipe bottom
-        BezierConfig(3, 4, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.03, 0.03)),  # right pipe inner
-        BezierConfig(4, 5, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.03, 0.03)),  # left pipe inner
-        BezierConfig(5, 6, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.03, 0.03)),  # left pipe bottom
-        BezierConfig(6, 0, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.03, 0.03)),  # left pipe outer
+        BezierConfig(0, 1, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.02, 0.02)),  # waist
+        BezierConfig(1, 2, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.02, 0.02)),  # right pipe outer
+        BezierConfig(2, 3, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.02, 0.02)),  # right pipe bottom
+        BezierConfig(3, 4, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.02, 0.02)),  # right pipe inner
+        BezierConfig(4, 5, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.02, 0.02)),  # left pipe inner
+        BezierConfig(5, 6, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.02, 0.02)),  # left pipe bottom
+        BezierConfig(6, 0, np.random.uniform(-0.02, 0.02), np.random.uniform(-0.02, 0.02)),  # left pipe outer
     ]
 
     return bezier_configs
@@ -130,7 +130,7 @@ def sample_tshirt_bezier_config() -> BezierConfig:
 def sample_towel_bevel_configs(keypoint_ids: List[int]):
     bevel_configs = []
     for id in keypoint_ids:
-        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.0)))
+        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.002)))
     return bevel_configs
 
 
