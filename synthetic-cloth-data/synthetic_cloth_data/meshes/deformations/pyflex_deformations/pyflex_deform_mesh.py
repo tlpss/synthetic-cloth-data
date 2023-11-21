@@ -129,6 +129,8 @@ def deform_mesh(
         # tolerance empirically determined
         wait_until_scene_is_stable(pyflex_stepper=cloth_system.pyflex_stepper, max_steps=500, tolerance=0.05)
 
+        grasper = ParticleGrasper(pyflex_stepper)
+
         # fold towards a random point around the grasp point
         if np.random.uniform() < deformation_config.fold_probability:
             logger.debug("folding")
@@ -141,7 +143,6 @@ def deform_mesh(
             else:
                 grasp_particle_idx = np.random.randint(0, n_particles)
 
-            grasper = ParticleGrasper(pyflex_stepper)
             grasper.grasp_particle(grasp_particle_idx)
 
             fold_distance = np.random.uniform(0.1, deformation_config.max_fold_distance)
