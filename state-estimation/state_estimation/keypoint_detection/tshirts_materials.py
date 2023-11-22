@@ -15,9 +15,9 @@ if __name__ == "__main__":
     arg_dict["json_test_dataset_path"] = ARTF_TSHIRT_TEST_PATH
     arg_dict["json_validation_dataset_path"] = ARTF_TSHIRT_TRAIN_PATH
     arg_dict["json_dataset_path"] = (
-        data_dir / "synthetic-data" / "TSHIRT" / "00-cloth3d-default-material" / "annotations.json"
+        data_dir / "synthetic-data" / "TSHIRT" / "03-single-layer-full-material" / "annotations.json"
     )
-    arg_dict["wandb_name"] = "synthetic-tshirts-material-full"
+    arg_dict["wandb_name"] = "synthetic-tshirts-single-full-material"
 
     subprocess.run(create_train_command_from_arg_dict(arg_dict), shell=True)
 
@@ -27,10 +27,10 @@ if __name__ == "__main__":
     arg_dict["json_test_dataset_path"] = ARTF_TSHIRT_TEST_PATH
     arg_dict["json_validation_dataset_path"] = ARTF_TSHIRT_TRAIN_PATH
     arg_dict["json_dataset_path"] = (
-        data_dir / "synthetic-data" / "TSHIRT" / "01-cloth3d-hsv-material" / "annotations.json"
+        data_dir / "synthetic-data" / "TSHIRT" / "07-single-layer-hsv-material" / "annotations.json"
     )
 
-    arg_dict["wandb_name"] = "synthetic-tshirts-material-hsv"
+    arg_dict["wandb_name"] = "synthetic-tshirts-single-hsv-material"
     subprocess.run(create_train_command_from_arg_dict(arg_dict), shell=True)
 
     print("random material tshirts")
@@ -39,8 +39,8 @@ if __name__ == "__main__":
     arg_dict["json_test_dataset_path"] = ARTF_TSHIRT_TEST_PATH
     arg_dict["json_validation_dataset_path"] = ARTF_TSHIRT_TRAIN_PATH
     arg_dict["json_dataset_path"] = (
-        data_dir / "synthetic-data" / "TSHIRT" / "02-cloth3d-random-material" / "annotations.json"
+        data_dir / "synthetic-data" / "TSHIRT" / "05-single-layer-random-material" / "annotations.json"
     )
 
-    arg_dict["wandb_name"] = "synthetic-tshirts-material-random"
+    arg_dict["wandb_name"] = "synthetic-tshirts-single-random-material"
     subprocess.run(create_train_command_from_arg_dict(arg_dict), shell=True)
