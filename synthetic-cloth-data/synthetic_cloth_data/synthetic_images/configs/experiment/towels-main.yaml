@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - override /cloth_material: random_polyhaven
+
+cloth_type: TOWEL
+relative_dataset_path: synthetic_images/TOWEL/single-layer-random-material-10K
+
+cloth_mesh:
+  mesh_path: deformed_meshes/TOWEL/00-final-single-layer
+
+
+annotator:
+  annotations_n_ring_visibility: 2

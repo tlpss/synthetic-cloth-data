@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+  - override /cloth_material: hsv
+
+cloth_type: TSHIRT
+relative_dataset_path: synthetic_images/TSHIRT/07-single-layer-hsv-material
+
+cloth_mesh:
+  mesh_path: deformed_meshes/TSHIRT/04-single-layer
+
+annotator:
+  annotations_n_ring_visibility: 2

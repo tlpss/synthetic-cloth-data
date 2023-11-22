@@ -1,9 +1,9 @@
 # @package _global_
-mesh_dir: flat_meshes/TOWEL/dev
-output_dir: deformed_meshes/TOWEL/pyflex/dev
+mesh_dir: flat_meshes/TOWEL/00-final
+output_dir: deformed_meshes/TOWEL/00-final-single-layer
 
 deformation:
-  fold_probability: 0.95
+  fold_probability: 0.9
   grasp_keypoint_vertex_probability: 0.9
 
 

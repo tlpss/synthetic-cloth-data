@@ -1,12 +1,10 @@
 # @package _global_
-mesh_dir: flat_meshes/SHORTS/Cloth3D-5-flat-randomized-scale
-output_dir: deformed_meshes/SHORTS/00-cloth3d
+mesh_dir: flat_meshes/SHORTS/00-final
+output_dir: deformed_meshes/SHORTS/00-final-single-layer
 
 deformation:
-  fold_probability: 0.5
-  max_drag: 0.0 # not necessary with all the self collisions
-  max_orientation_angle: 0.5 # np.pi /6, keep deformations small
-
+  fold_probability: 0.8
+  grasp_keypoint_vertex_probability: 0.7
 
 
 num_samples: 5000
