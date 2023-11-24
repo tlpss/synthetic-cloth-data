@@ -88,6 +88,8 @@ def create_coco_annotations(  # noqa: C901
         keypoints_2D, keypoints_3D = _order_towel_keypoints(keypoints_2D, keypoints_3D, bbox)
     if cloth_type == "TSHIRT":
         keypoints_2D, keypoints_3D = _order_tshirt_keypoints(keypoints_2D, keypoints_3D, bbox)
+    if cloth_type == "SHORTS":
+        keypoints_2D = order_shorts_keypoints(keypoints_2D, keypoints_3D, bbox)
 
     # check if cloth object has a solidify modifier and remove it temporarily because it affects the ray cast and hence the visibility check.
     solidify_modifier = None
