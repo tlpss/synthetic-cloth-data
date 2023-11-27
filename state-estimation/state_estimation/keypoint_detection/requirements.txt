@@ -1,2 +1,3 @@
+timm==0.9.7
 keypoint-detection@git+https://github.com/tlpss/keypoint-detection.git@580365e
 
