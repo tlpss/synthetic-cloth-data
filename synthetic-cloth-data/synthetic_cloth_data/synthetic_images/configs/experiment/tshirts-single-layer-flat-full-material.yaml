@@ -7,4 +7,4 @@ cloth_mesh:
   mesh_path: flat_meshes/TSHIRT/01-single-layer
 
 annotator:
-  annotations_n_ring_visibility: 2
+  annotations_n_ring_visibility: 4

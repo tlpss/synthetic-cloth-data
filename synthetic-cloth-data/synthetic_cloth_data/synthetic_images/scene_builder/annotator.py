@@ -111,12 +111,14 @@ def create_coco_annotations(  # noqa: C901
         # if so, we set the keypoint to be visible
         # location remains at the original keypoint location
         is_kp_visible = False
-        for i in range(COCOAnnotatorConfig.annotations_n_ring_visibility + 1):
+        for i in range(annotator_config.annotations_n_ring_visibility + 1):
             n_ring_neighbours = get_strict_n_ring_neighbours(
                 neighbours_dict, keypoint_vertex_dict[category_keypoints[keypoint_idx]], i
             )
             for neighbour in n_ring_neighbours:
                 neighbour_coords = cloth_object.matrix_world @ cloth_object.data.vertices[neighbour].co
+                # add sphere on neighbour for debugging
+                # bpy.ops.mesh.primitive_uv_sphere_add(radius=0.001, location=neighbour_coords)
                 if not is_vertex_occluded_for_scene_camera(neighbour_coords):
                     is_kp_visible = True
                     print(f"found visible neighbour at n={i}")
@@ -139,8 +141,9 @@ def create_coco_annotations(  # noqa: C901
 
         # for debugging:
         # add 3D sphere around each keypoint
-        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.01, location=keypoint_3D)
-        bpy.context.object.name = f"keypoint_{TSHIRT_KEYPOINTS[keypoint_idx]}"
+        # if visible_flag == 2:
+        #     bpy.ops.mesh.primitive_uv_sphere_add(radius=0.01, location=keypoint_3D)
+        #     bpy.context.object.name = f"keypoint_{TSHIRT_KEYPOINTS[keypoint_idx]}"
 
     # add the solidifier back if required
     if solidify_modifier is not None:

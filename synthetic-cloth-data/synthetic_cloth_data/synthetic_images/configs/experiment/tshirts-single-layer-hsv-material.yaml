@@ -9,4 +9,4 @@ cloth_mesh:
   mesh_path: deformed_meshes/TSHIRT/04-single-layer
 
 annotator:
-  annotations_n_ring_visibility: 2
+  annotations_n_ring_visibility: 4
