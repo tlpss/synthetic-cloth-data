@@ -130,7 +130,10 @@ def sample_tshirt_bezier_config() -> BezierConfig:
 def sample_towel_bevel_configs(keypoint_ids: List[int]):
     bevel_configs = []
     for id in keypoint_ids:
-        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.0, 0.002)))
+        # lower bound because on bevel because very small radii create very small triangles,
+        #  which messes up the N-ring neighbour visibility check during rendering!
+        # this one should be paired with visibility check N=3 or N=4.
+        bevel_configs.append(BevelConfig(id, 4, np.random.uniform(0.001, 0.002)))
     return bevel_configs
 
 
@@ -222,7 +225,7 @@ if __name__ == "__main__":
     add_material(plane, (1, 0.5, 0.5, 1.0))
 
     for idx in tqdm.trange(10):
-        ob, kp = generate_cloth_object(CLOTH_TYPES.TOWEL)
+        ob, kp = generate_cloth_object(CLOTH_TYPES.SHORTS)
         # attach_cloth_sim(ob)
         ob.location = np.array([idx % 10, idx // 10, 0.001])
         # update the object's world matrix

@@ -27,6 +27,7 @@ from synthetic_cloth_data.utils import (
 class COCOAnnotatorConfig:
     # N-ring of vertices to check for visibility of keypoints.
     # If any of the vertices in the n-ring is visible, the keypoint is considered visible.
+    # this value should be tuned for a particular mesh triangulation/resolution.
     annotations_n_ring_visibility: int = 4
 
 
