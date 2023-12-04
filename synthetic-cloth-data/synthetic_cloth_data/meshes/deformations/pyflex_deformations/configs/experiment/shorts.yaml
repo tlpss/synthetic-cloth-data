@@ -3,7 +3,7 @@ mesh_dir: flat_meshes/SHORTS/00-final
 output_dir: deformed_meshes/SHORTS/00-final-single-layer
 
 deformation:
-  fold_probability: 0.8
+  fold_probability: 0.4
   grasp_keypoint_vertex_probability: 0.7
 
 

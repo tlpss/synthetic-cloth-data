@@ -13,3 +13,5 @@ synthetic-cloth-data/data/
 **/coco.json
 
 pyflex/PyFlex/bindings/build/
+**artifacts/
+**lightning_logs/
