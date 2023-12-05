@@ -36,7 +36,7 @@ def is_vertex_occluded_for_scene_camera(co: Vector, helper_cube_scale: float = 0
     if DEBUG:
         print(f"hit location: {location}")
         bpy.ops.mesh.primitive_ico_sphere_add(
-            location=location, scale=(helper_cube_scale, helper_cube_scale, helper_cube_scale)
+            location=co, scale=(helper_cube_scale, helper_cube_scale, helper_cube_scale)
         )
 
     # remove the auxiliary cube
@@ -82,31 +82,50 @@ def is_point_in_camera_frustum(point: Vector, camera: bpy.types.Object) -> bool:
 
 if __name__ == "__main__":
     """quick test for the object visibility code."""
-    import airo_blender as ab
     import numpy as np
 
+    # delete default cube
+    bpy.ops.object.delete()
+
     camera = bpy.data.objects["Camera"]
-    camera.location = (-10, 0, 0)
-    camera.rotation_euler = (np.pi / 2, 0, -np.pi / 2)
+    camera.location = (-2, 0, 2)
+    camera.rotation_euler = (np.pi / 4, 0, -np.pi / 2)
 
-    # add 100 random spheres to scene
-    objects = []
-    for i in range(100):
-        scale = 0.1
+    # # add 100 random spheres to scene
+    # objects = []
+    # for i in range(100):
+    #     scale = 0.1
 
-        z, y = np.random.random(2)
-        z, y = z * 10 - 5, y * 10 - 5
-        bpy.ops.mesh.primitive_cube_add(location=(10, y, z), scale=(scale, scale, scale))
-        cube_obj = bpy.context.active_object
-        objects.append(cube_obj)
+    #     z, y = np.random.random(2)
+    #     z, y = z * 10 - 5, y * 10 - 5
+    #     bpy.ops.mesh.primitive_cube_add(location=(10, y, z), scale=(scale, scale, scale))
+    #     cube_obj = bpy.context.active_object
+    #     objects.append(cube_obj)
 
-    bpy.ops.mesh.primitive_cube_add(location=(10, 0, 1.1), scale=(0.1, 0.1, 0.1))
-    cube_obj = bpy.context.active_object
-    objects.append(cube_obj)
+    # bpy.ops.mesh.primitive_cube_add(location=(10, 0, 1.1), scale=(0.1, 0.1, 0.1))
+    # cube_obj = bpy.context.active_object
+    # objects.append(cube_obj)
 
-    for obj in objects:
-        occluded = is_object_occluded_for_scene_camera(obj)
-        if occluded:
-            ab.add_material(obj, (1, 0, 0))
-        else:
-            ab.add_material(obj, (0, 1, 0))
+    # for obj in objects:
+    #     occluded = is_object_occluded_for_scene_camera(obj)
+    #     if occluded:
+    #         ab.add_material(obj, (1, 0, 0))
+    #     else:
+    #         ab.add_material(obj, (0, 1, 0))
+
+    # load cloth mesh
+    mesh_file = "/fast_storage_2/symlinked_homes/tlips/Documents/Documents/synthetic-cloth-data/synthetic-cloth-data/data/deformed_meshes/TSHIRT/04-single-layer/002488.obj"
+    bpy.ops.import_scene.obj(filepath=mesh_file, split_mode="OFF")  # keep vertex order with split_mode="OFF"
+    cloth_object = bpy.context.selected_objects[0]
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = cloth_object
+    cloth_object.select_set(True)
+
+    import tqdm
+
+    # check if vertices are occluded
+    for vertex in tqdm.tqdm(cloth_object.data.vertices):
+        coords = cloth_object.matrix_world @ vertex.co
+        if not is_vertex_occluded_for_scene_camera(coords):
+            # add sphere at the vertex
+            bpy.ops.mesh.primitive_ico_sphere_add(location=coords, scale=(0.0005, 0.0005, 0.0005))

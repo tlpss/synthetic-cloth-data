@@ -19,8 +19,36 @@ from synthetic_cloth_data.utils import (
     CATEGORY_NAME_TO_KEYPOINTS_DICT,
     CLOTH_TYPE_TO_COCO_CATEGORY_ID,
     SHORTS_KEYPOINTS,
+    TOWEL_KEYPOINTS,
     TSHIRT_KEYPOINTS,
 )
+
+
+def get_3D_and_2D_keypoints_from_vertices(
+    cloth_object: bpy.types.Object,
+    keypoint_vertex_dict: dict,
+    category_keypoints: List[str],
+    image_width: int,
+    image_height: int,
+):
+    # get the 3D coordinates of the keypoints, in the desired order for the coco category
+    keypoints_3D = [
+        cloth_object.matrix_world @ cloth_object.data.vertices[keypoint_vertex_dict[keypoint_name]].co
+        for keypoint_name in category_keypoints
+    ]
+    scene = bpy.context.scene
+    camera = bpy.context.scene.camera
+
+    keypoints_2D = np.array([np.array(world_to_camera_view(scene, camera, corner))[:2] for corner in keypoints_3D])
+
+    # flip y-axis because blender uses y-up and we use y-down (as does coco)
+    keypoints_2D[:, 1] = 1.0 - keypoints_2D[:, 1]
+
+    # scale keypoints to pixel coordinates
+    keypoints_2D[:, 0] = keypoints_2D[:, 0] * image_width
+    keypoints_2D[:, 1] = keypoints_2D[:, 1] * image_height
+
+    return keypoints_2D, keypoints_3D
 
 
 @dataclasses.dataclass
@@ -66,31 +94,26 @@ def create_coco_annotations(  # noqa: C901
         # so no annotation needs to be added.
         return
 
-    # get the 3D coordinates of the keypoints, in the desired order for the coco category
     category_keypoints = CATEGORY_NAME_TO_KEYPOINTS_DICT[cloth_type.name]
-    keypoints_3D = [
-        cloth_object.matrix_world @ cloth_object.data.vertices[keypoint_vertex_dict[keypoint_name]].co
-        for keypoint_name in category_keypoints
-    ]
-    scene = bpy.context.scene
-    camera = bpy.context.scene.camera
-
-    keypoints_2D = np.array([np.array(world_to_camera_view(scene, camera, corner))[:2] for corner in keypoints_3D])
-
-    # flip y-axis because blender uses y-up and we use y-down (as does coco)
-    keypoints_2D[:, 1] = 1.0 - keypoints_2D[:, 1]
-
-    # scale keypoints to pixel coordinates
-    keypoints_2D[:, 0] = keypoints_2D[:, 0] * image_width
-    keypoints_2D[:, 1] = keypoints_2D[:, 1] * image_height
+    keypoints_2D, keypoints_3D = get_3D_and_2D_keypoints_from_vertices(
+        cloth_object, keypoint_vertex_dict, category_keypoints, image_width, image_height
+    )
 
     # order keypoints to deal with symmetries.
+    # uses the 2D pixel locations, so that it can also be applied on the 2D keypoints from the real data.
+    # but we need to make sure that the 2D keypoints are in the same order as the 3D keypoints and that the keypoint_vertex_dict is also updated.
     if cloth_type == "TOWEL":
-        keypoints_2D, keypoints_3D = _order_towel_keypoints(keypoints_2D, keypoints_3D, bbox)
+        keypoints_2D, keypoints_3D, keypoint_vertex_dict = _order_towel_keypoints(
+            keypoints_2D, keypoints_3D, keypoint_vertex_dict, bbox
+        )
     if cloth_type == "TSHIRT":
-        keypoints_2D, keypoints_3D = _order_tshirt_keypoints(keypoints_2D, keypoints_3D, bbox)
+        keypoints_2D, keypoints_3D, keypoint_vertex_dict = _order_tshirt_keypoints(
+            keypoints_2D, keypoints_3D, keypoint_vertex_dict, bbox
+        )
     if cloth_type == "SHORTS":
-        keypoints_2D = order_shorts_keypoints(keypoints_2D, keypoints_3D, bbox)
+        keypoints_2D, keypoints_3D, keypoint_vertex_dict = order_shorts_keypoints(
+            keypoints_2D, keypoints_3D, keypoint_vertex_dict, bbox
+        )
 
     # check if cloth object has a solidify modifier and remove it temporarily because it affects the ray cast and hence the visibility check.
     solidify_modifier = None
@@ -131,6 +154,7 @@ def create_coco_annotations(  # noqa: C901
 
         # we set keypoints outside the image to be "not labeled"
         if px < 0 or py < 0 or px > image_width or py > image_height:
+            print("keypoint outside image")
             visible_flag = 0
             px = 0.0
             py = 0.0
@@ -142,9 +166,9 @@ def create_coco_annotations(  # noqa: C901
 
         # for debugging:
         # add 3D sphere around each keypoint
-        # if visible_flag == 2:
-        #     bpy.ops.mesh.primitive_uv_sphere_add(radius=0.01, location=keypoint_3D)
-        #     bpy.context.object.name = f"keypoint_{TSHIRT_KEYPOINTS[keypoint_idx]}"
+        if visible_flag == 2:
+            bpy.ops.mesh.primitive_uv_sphere_add(radius=0.01, location=keypoint_3D)
+            bpy.context.object.name = f"keypoint_{category_keypoints[keypoint_idx]}"
 
     # add the solidifier back if required
     if solidify_modifier is not None:
@@ -170,7 +194,7 @@ def create_coco_annotations(  # noqa: C901
         json.dump(annotation.dict(exclude_none=True), file, indent=4)
 
 
-def _order_towel_keypoints(keypoints_2D, keypoints_3D, bbox):
+def _order_towel_keypoints(keypoints_2D, keypoints_3D, vertex_dict, bbox):
     x_min, y_min, width, height = bbox
 
     # keypoints are in cyclical order but we need to break symmetries by having a starting point in the image viewpoint
@@ -202,13 +226,16 @@ def _order_towel_keypoints(keypoints_2D, keypoints_3D, bbox):
 
     new_keypoints_2D = [keypoints_2D[i] for i in order]
     new_keypoints_3D = [keypoints_3D[i] for i in order]
+    vertices = list(vertex_dict.values())
+    new_vertices = [vertices[i] for i in order]
+    new_vertex_dict = dict(zip(TOWEL_KEYPOINTS, new_vertices))
 
     keypoints_2D = new_keypoints_2D
     keypoints_3D = new_keypoints_3D
-    return keypoints_2D, keypoints_3D
+    return keypoints_2D, keypoints_3D, new_vertex_dict
 
 
-def _order_tshirt_keypoints(keypoints_2D: np.ndarray, keypoints_3D: List, bbox: tuple):
+def _order_tshirt_keypoints(keypoints_2D: np.ndarray, keypoints_3D: List, keypoints_vertex_dict, bbox: tuple):
 
     # left == side of which the waist kp is closest to the bottom left corner of the bbox in 2D.
     # simply serves to break symmetries and find adjacent keypoints, does not correspond with human notion of left and right,
@@ -241,11 +268,16 @@ def _order_tshirt_keypoints(keypoints_2D: np.ndarray, keypoints_3D: List, bbox: 
                 # https://stackoverflow.com/questions/21288044/row-exchange-in-numpy
                 keypoints_2D[[idx, right_idx]] = keypoints_2D[[right_idx, idx]]
                 keypoints_3D[idx], keypoints_3D[right_idx] = keypoints_3D[right_idx], keypoints_3D[idx]
+                keypoints_vertex_dict[keypoint], keypoints_vertex_dict[TSHIRT_KEYPOINTS[right_idx]] = (
+                    keypoints_vertex_dict[TSHIRT_KEYPOINTS[right_idx]],
+                    keypoints_vertex_dict[keypoint],
+                )
+    return keypoints_2D, keypoints_3D, keypoints_vertex_dict
 
-    return keypoints_2D, keypoints_3D
 
-
-def order_shorts_keypoints(keypoints_2D: np.ndarray, keypoints_3D: List, bbox: Tuple[int]) -> np.ndarray:
+def order_shorts_keypoints(
+    keypoints_2D: np.ndarray, keypoints_3D: List, keypoint_vertices_dict: dict, bbox: Tuple[int]
+) -> np.ndarray:
     x_min, y_min, width, height = bbox
 
     top_left_bbox_corner = (x_min, y_min)
@@ -271,4 +303,8 @@ def order_shorts_keypoints(keypoints_2D: np.ndarray, keypoints_3D: List, bbox: T
                 # https://stackoverflow.com/questions/21288044/row-exchange-in-numpy
                 keypoints_2D[[idx, right_idx]] = keypoints_2D[[right_idx, idx]]
                 keypoints_3D[idx], keypoints_3D[right_idx] = keypoints_3D[right_idx], keypoints_3D[idx]
-    return keypoints_2D
+                keypoint_vertices_dict[keypoint], keypoint_vertices_dict[SHORTS_KEYPOINTS[right_idx]] = (
+                    keypoint_vertices_dict[SHORTS_KEYPOINTS[right_idx]],
+                    keypoint_vertices_dict[keypoint],
+                )
+    return keypoints_2D, keypoints_3D, keypoint_vertices_dict
