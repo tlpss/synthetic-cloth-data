@@ -42,7 +42,7 @@ class HSVMaterialConfig(ClothMaterialConfig):
     h_range: List = dataclasses.field(default_factory=lambda: [0, 1])
     s_range: List = dataclasses.field(default_factory=lambda: [0, 1])
     v_range: List = dataclasses.field(default_factory=lambda: [0.5, 1])
-    add_procedural_fabric_texture: bool = True
+    add_procedural_fabric_texture: bool = False
 
 
 @dataclasses.dataclass
@@ -236,8 +236,8 @@ def _add_rgb_material_to_mesh(config: HSVMaterialConfig, cloth_object: bpy.types
     rgba = np.concatenate([rgb, [1]])
     material = create_evenly_colored_material(rgba)
     material = modify_bsdf_to_cloth(material)
-    material = _add_procedural_fabric_texture_to_bsdf(material)
-
+    if config.add_procedural_fabric_texture:
+        material = _add_procedural_fabric_texture_to_bsdf(material)
     cloth_object.data.materials[0] = material
 
 
