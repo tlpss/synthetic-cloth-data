@@ -27,7 +27,7 @@ if __name__ == "__main__":
     arg_dict["json_test_dataset_path"] = ARTF_TSHIRT_TEST_PATH
     arg_dict["json_validation_dataset_path"] = ARTF_TSHIRT_TRAIN_PATH
     arg_dict["json_dataset_path"] = (
-        data_dir / "synthetic-data" / "TSHIRT" / "05-single-random-material" / "annotations.json"
+        data_dir / "synthetic-data" / "TSHIRT" / "05-single-layer-random-material" / "annotations.json"
     )
     arg_dict["wandb_name"] = "synthetic-tshirts-single-layer-random-material"
     subprocess.run(create_train_command_from_arg_dict(arg_dict), shell=True)

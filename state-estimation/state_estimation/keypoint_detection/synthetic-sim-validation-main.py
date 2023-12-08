@@ -14,6 +14,8 @@ from state_estimation.keypoint_detection.common import (
 if __name__ == "__main__":
     print(" synthetic tshirts")
     arg_dict = SYNTH_DEFAULT_DICT.copy()
+    arg_dict["max_epochs"] = 20
+
     arg_dict["keypoint_channel_configuration"] = TSHIRT_CHANNEL_CONFIG
     arg_dict["json_validation_dataset_path"] = (
         data_dir / "synthetic-data" / "TSHIRT" / "single-layer-random-material-10K" / "annotations_val.json"
