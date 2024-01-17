@@ -1,6 +1,6 @@
 # synthetic-cloth-data
 
-This repo contains a Blender-based pipeline for procedural data generation of clothes to learn perception models for robotic cloth manipulation.
+This repo contains a Blender-based pipeline for procedural data generation of clothes  to learn perception models for robotic cloth manipulation.
 
 It contains code to
 - generate single-layer cloth meshes & their keypoint vertex IDs using procedural geometric templates
@@ -54,16 +54,16 @@ This section contains all the commands to generate the datasets and train the ke
 ## Data Generation
 
 ### flat meshes
-single-layer tshirts:
+single-layer tshirts: `blender -b -P meshes/flat_meshes/generate_flat_meshes.py -- --cloth_type TSHIRT --num_samples 1000 --dataset_tag 00-final`
 
-cloth3d tshirts:
+cloth3d tshirts: We manually cleaned 5 meshes from the [CLoth3D](https://hbertiche.github.io/CLOTH3D/) dataset and triangulated them. We then dropped them on a table to make them flat and resized them to generate additional diversity (see [this script](./synthetic-cloth-data/synthetic_cloth_data/meshes/flat_meshes/generate_scale_randomized_meshes.py)). Download them [TODO]() and unzip to the `data/flat_meshes/TSHIRT` folder.
 
-single-layer Towels: `blender -b -P generate_flat_meshes.py -- --cloth_type TOWEL --num_samples 1000 --dataset_tag 00-final`
+single-layer Towels: `blender -b -P meshes/flat_meshes/generate_flat_meshes.py -- --cloth_type TOWEL --num_samples 1000 --dataset_tag 00-final`
 
-single-layer Shorts:
+single-layer Shorts: `blender -b -P meshes/flat_meshes/generate_flat_meshes.py -- --cloth_type SHORTS --num_samples 1000 --dataset_tag 00-final`
 
 ### Deformed meshes
-single-layer Tshirts:
+single-layer Tshirts: `python `
 
 cloth3d Tshirts:
 
@@ -113,7 +113,7 @@ all code for training the keypoint detectors that are used in the paper is locat
 
 *aRTF dataset*
 
-Download all splits from [TODO]() and place in `state-estimation/state_estimation/data/artf` folder.
+Download all splits from [the aRTF Clothes repo](https://github.com/tlpss/aRTF-Clothes-dataset/tree/main?tab=readme-ov-file#using-this-dataset) and put them in the `state-estimation/state_estimation/data/artf` folder.
 
 *Synthetic datasets*
 
