@@ -102,41 +102,12 @@ tailored materials:
 
 
 ## Training the Keypoint Detectors
-all code for training the keypoint detectors that are used in the paper is located in the `state-estimation/state_estimation/keypoint_detection` folder. All commands are run from this folder. A [Keypoint Detection framework](https://github.com/tlpss/keypoint-detection) is used to train the keypoint detectors.
+all code for training the keypoint detectors that are used in the paper is located in the `state-estimation/state_estimation/keypoint_detection` folder. You can find the instructions to reproduce the experiments [here](./state-estimation/Readme.md)
 
 
-**Installation**
-- `pip install -r requirements.txt`
-- log in to wandb: `wandb login`
+A [Keypoint Detection framework](https://github.com/tlpss/keypoint-detection) is used to train the keypoint detectors.
 
-**Gathering the data**
 
-*aRTF dataset*
-
-Download all splits from [the aRTF Clothes repo](https://github.com/tlpss/aRTF-Clothes-dataset/tree/main?tab=readme-ov-file#using-this-dataset) and put them in the `state-estimation/state_estimation/data/artf` folder.
-
-*Synthetic datasets*
-
-Either generate the appropriate synthetic datasets as described above and symlink the `synthetic-cloth-data/data/datasets` folder to `state-estimation/state_estimation/data/synthetic/`
-
-or download the datasets from [TODO]() and place in `state-estimation/state_estimation/data/synthetic` folder.
-
-**Main results**
-
-real baseline: `python real_baselines.py`
-
-sim_to_real: `python synthetic_main.py`
-
-finetune ^ on real: `python synthetic-finetune-main.py`.
- Don't forget to update the wandb artifacts if you trained a new sim-to-real model.
-
- sim-to-sim: `python synthetic-sim-validation-main.py`
-
-**Additional experiments**
-
-mesh comparisons: `python tshirts_meshes.py`
-
-material comparisons: `python tshirts_materials.py`
 
 
 </details>
