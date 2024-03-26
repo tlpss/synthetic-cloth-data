@@ -25,7 +25,7 @@ In this work we create a Blender-based pipeline for procedural data generation o
 This repo contains code to
 - Generate procedural cloth meshes and to keep track of the vertices that correspond to each semantic keypoint
 - deform cloth meshes using [Nvidia Flex](https://developer.nvidia.com/flex) or the blender cloth simulator, to generate the desired distribution of clothes (crumpled/almost flattened/..)
--build blender scenes and render images while storing keypoints and segmentation masks in COCO format.
+- build blender scenes and render images while storing keypoints and segmentation masks in COCO format.
 
 
 We have generated data for *almost-flattened*  T-shirts, shorts and towels. The data generation pipeline can be easily extended to other cloth types, other deformation configurations (e.g. hanging from a robot gripper) and/or other data modalities (e.g. depth images...).
