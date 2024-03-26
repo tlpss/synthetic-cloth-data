@@ -3,7 +3,7 @@
 
 
 <p align="center">
-  <a href="https://www.github.io/tlpss">Thomas Lips</a>,
+  <a href="https://tlpss.github.io/">Thomas Lips</a>,
   <a href="https://github.com/Victorlouisdg">Victor-Louis De Gusseme</a>,
   <a href="https://airo.ugent.be/members/francis/">Francis wyffels</a>
   <br/>
@@ -111,7 +111,7 @@ This section contains all the commands to generate the datasets and train the ke
 ### flat meshes
 single-layer tshirts: `blender -b -P meshes/flat_meshes/generate_flat_meshes.py -- --cloth_type TSHIRT --num_samples 1000 --dataset_tag 00-final`
 
-cloth3d tshirts: We manually cleaned 5 meshes from the [CLoth3D](https://hbertiche.github.io/CLOTH3D/) dataset and triangulated them. We then dropped them on a table to make them flat and resized them to generate additional diversity (see [this script](./synthetic-cloth-data/synthetic_cloth_data/meshes/flat_meshes/generate_scale_randomized_meshes.py)). Download them [TODO]() and unzip to the `data/flat_meshes/TSHIRT` folder.
+cloth3d tshirts: We manually cleaned 5 meshes from the [CLoth3D](https://hbertiche.github.io/CLOTH3D/) dataset and triangulated them. We then dropped them on a table to make them flat and resized them to generate additional diversity (see [this script](./synthetic-cloth-data/synthetic_cloth_data/meshes/flat_meshes/generate_scale_randomized_meshes.py)). Download them [here](https://cloud.ilabt.imec.be/index.php/s/x5yABaeFibq6eDL) and unzip to the `data/flat_meshes/TSHIRT` folder.
 
 single-layer Towels: `blender -b -P meshes/flat_meshes/generate_flat_meshes.py -- --cloth_type TOWEL --num_samples 1000 --dataset_tag 00-final`
 
