@@ -33,6 +33,15 @@ We have generated data for *almost-flattened*  T-shirts, shorts and towels. The 
 In the paper, we test the efficacy of the synthetic data by training keypoint detectors and evaulating their performance on the [aRTF Clothes dataset](https://github.com/tlpss/aRTF-Clothes-dataset).
 The repo contains code to reproduce all experiments from the paper. A number of trained keypoint detectors are also made available. Informations on how to use these checkpoints can be found here [here](state-estimation/Readme.md).
 
+
+Live interactions with these checkpoints can be seen here:
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Mlwg_qPxr78?si=VntdFciJBo_Cr3j-" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+In addition we show how the keypoints can be used for folding T-shirts below.
+In this video we take a single image using the ego-centric camera and predict keypoints on that image. Based on these keypoints, a scripted sequence of fold motions is executed that allow us to fold T-shirts.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/bqnQ4iLnp20?si=jCaGCxDZSOYlDuo1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 ## High-level overview of the codebase
 
 ```
