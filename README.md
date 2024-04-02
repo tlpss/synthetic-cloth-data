@@ -35,13 +35,12 @@ The repo contains code to reproduce all experiments from the paper. A number of 
 
 
 Live interactions with these checkpoints can be seen here:
-<iframe width="560" height="315" src="https://www.youtube.com/embed/Mlwg_qPxr78?si=VntdFciJBo_Cr3j-" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Mlwg_qPxr78/0.jpg)](https://www.youtube.com/watch?v=Mlwg_qPxr78)
 
 In addition we show how the keypoints can be used for folding T-shirts below.
 In this video we take a single image using the ego-centric camera and predict keypoints on that image. Based on these keypoints, a scripted sequence of fold motions is executed that allow us to fold T-shirts.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/bqnQ4iLnp20?si=jCaGCxDZSOYlDuo1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/bqnQ4iLnp20/0.jpg)](https://www.youtube.com/watch?v=bqnQ4iLnp20)
 ## High-level overview of the codebase
 
 ```
