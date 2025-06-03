@@ -14,6 +14,10 @@ def examples():
     image1 = Image.open(image_path1)
     image2 = Image.open(image_path2)
     image3 = Image.open(image_path3)
+    # save each inidividual image
+    image1.save(data_dir / "sim-materials-1.png")
+    image2.save(data_dir / "sim-materials-2.png")
+    image3.save(data_dir / "sim-materials-3.png")
     images = [image1, image2, image3]
     # cut left and right sides of image
     images = [image.crop((100, 0, image.width - 100, image.height)) for image in images]

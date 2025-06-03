@@ -1,0 +1,2 @@
+blender -P create_cloth_scene.py -- --hydra_config visualization
+python generate_data.py --dataset-size 20 --hydra_config visualization

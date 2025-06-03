@@ -1,0 +1,19 @@
+defaults:
+  - camera: zed2i_512_256
+  - renderer: cycles
+  - cloth_mesh: default
+  - cloth_material: random_polyhaven
+  - surface: polyhaven
+  - distractors: default
+  - annotator: default
+  - _self_
+
+camera:
+  horizontal_resolution: 1024
+  vertical_resolution: 1024
+cloth_type: TSHIRT
+id: 4
+relative_dataset_path: synthetic_images/TSHIRT/VIS
+
+cloth_mesh:
+  mesh_path: deformed_meshes/TSHIRT/visualization
